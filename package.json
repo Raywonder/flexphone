@@ -1,50 +1,75 @@
 {
   "name": "flexphone",
   "version": "1.0.0",
-  "description": "FlexPhone - Standalone SIP Client with FlexPBX Integration",
+  "description": "FlexPhone - Lightweight SIP Client for iOS and Desktop (Official Production Version)",
   "main": "src/main.js",
-  "homepage": "https://github.com/Raywonder/flexphone",
-  "author": "Raywonder <git@devine-creations.com>",
+  "homepage": ".",
+  "author": {
+    "name": "FlexPBX Team",
+    "email": "support@flexpbx.com"
+  },
   "license": "MIT",
   "keywords": [
     "sip",
     "voip",
     "phone",
+    "sms",
+    "callcentric",
     "flexpbx",
-    "accessibility",
-    "electron",
-    "desktop"
+    "ios",
+    "mobile"
   ],
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build-mac": "electron-builder --mac",
-    "build-win": "electron-builder --win",
-    "build-linux": "electron-builder --linux",
+    "start": "cross-env NODE_ENV=production electron .",
+    "dev": "cross-env NODE_ENV=development electron . --dev",
+    "start:dev": "cross-env NODE_ENV=development electron .",
+    "build": "cross-env NODE_ENV=production electron-builder",
+    "build-prod": "cross-env NODE_ENV=production electron-builder --config electron-builder-prod.js",
+    "build-mac": "cross-env NODE_ENV=production electron-builder --mac",
+    "build-win": "cross-env NODE_ENV=production electron-builder --win",
+    "build-linux": "cross-env NODE_ENV=production electron-builder --linux",
+    "build-ios": "npx react-native run-ios",
+    "build-android": "npx react-native run-android",
     "pack": "electron-builder --dir",
-    "test": "echo \"FlexPhone tests not implemented yet\"",
+    "pack-prod": "cross-env NODE_ENV=production electron-builder --dir",
+    "test": "cross-env NODE_ENV=production node test/FlexPhone-Test.js",
+    "test:prod": "cross-env NODE_ENV=production npm test",
     "lint": "eslint src/",
-    "clean": "rm -rf dist/ build/"
+    "clean": "rm -rf dist/ build/",
+    "clean-prod": "rm -rf dist/ build/ ../FlexPhone-Releases/Production/*",
+    "release-prod": "npm run clean-prod && npm run build-prod && cp -r dist/* ../FlexPhone-Releases/Production/",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
+    "axios": "^1.7.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "express": "^4.19.2",
+    "howler": "^2.2.4",
+    "keytar": "^7.9.0",
     "sip.js": "^0.21.2",
-    "electron-store": "^8.1.0",
-    "howler": "^2.2.4"
+    "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@react-native-community/cli": "^13.6.6",
+    "@react-native-community/cli-platform-ios": "^13.6.6",
+    "cross-env": "^7.0.3",
+    "dmg-license": "^1.0.11",
     "electron": "^29.0.0",
     "electron-builder": "^24.13.3",
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "metro-react-native-babel-preset": "^0.77.0"
   },
   "build": {
-    "appId": "com.devinecreations.flexphone",
+    "appId": "com.flexpbx.flexphone",
     "productName": "FlexPhone",
     "directories": {
       "output": "dist"
     },
     "files": [
       "src/**/*",
+      "public/**/*",
       "assets/**/*",
       "node_modules/**/*"
     ],
@@ -66,7 +91,8 @@
         {
           "target": "nsis",
           "arch": [
-            "x64"
+            "x64",
+            "ia32"
           ]
         }
       ],
@@ -83,11 +109,18 @@
       ],
       "icon": "assets/icon.png",
       "category": "Network"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
     }
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Raywonder/flexphone.git"
+    "url": "https://github.com/flexpbx/flexphone.git"
   },
-  "type": "commonjs"
+  "bugs": {
+    "url": "https://github.com/flexpbx/flexphone/issues"
+  }
 }

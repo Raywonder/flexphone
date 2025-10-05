@@ -1,0 +1,21 @@
+{
+  "sip": {
+    "provider": "flexpbx",
+    "autoRegister": true,
+    "stunServers": [
+      "stun:stun.l.google.com:19302"
+    ]
+  },
+  "ui": {
+    "theme": "light",
+    "fontSize": 14,
+    "autoComplete": true,
+    "dtmfTones": true
+  },
+  "features": {
+    "sms": true,
+    "contacts": true,
+    "callHistory": true,
+    "voicemail": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "FlexPhone Core",
+  "version": "1.0.0",
+  "key": "core",
+  "files": [
+    "main.js",
+    "preload.js"
+  ],
+  "dependencies": [
+    "electron",
+    "sip.js"
+  ],
+  "checksum": "b310705a80f270d21f1e337e047f73cb4a2229239b753aeef6be0d35f672f6c3",
+  "created": "2025-10-02T15:20:08.703Z"
+}

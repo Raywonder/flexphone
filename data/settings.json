@@ -1,0 +1,8 @@
+{
+  "sip.provider": "CALLCENTRIC",
+  "sip.server": "callcentric.com",
+  "sip.port": 5060,
+  "sip.username": "YOUR_CALLCENTRIC_DID102",
+  "sip.password": "FlexPBX2025!",
+  "sip.displayName": "raywonder"
+}

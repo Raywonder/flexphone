@@ -1,0 +1,13 @@
+{
+  "name": "UI Module",
+  "version": "1.0.0",
+  "key": "ui",
+  "files": [
+    "index.html",
+    "app.js",
+    "styles.css"
+  ],
+  "dependencies": [],
+  "checksum": "ac36c8ce9abffe9bec16da829d40a127218895630cdeb11fdaeba992ee4be76e",
+  "created": "2025-10-02T15:20:08.709Z"
+}

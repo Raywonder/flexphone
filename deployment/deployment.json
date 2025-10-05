@@ -1,0 +1,28 @@
+{
+  "name": "FlexPhone",
+  "version": "1.0.0",
+  "type": "modular",
+  "created": "2025-10-02T15:20:08.718Z",
+  "platform": {
+    "node": "v24.9.0",
+    "electron": "^29.0.0",
+    "os": "darwin",
+    "arch": "x64"
+  },
+  "modules": [
+    "core",
+    "sip",
+    "ui",
+    "services"
+  ],
+  "configuration": {
+    "autoUpdate": true,
+    "telemetry": false,
+    "debug": false
+  },
+  "deployment": {
+    "portable": true,
+    "installers": true,
+    "modular": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Services Module",
+  "version": "1.0.0",
+  "key": "services",
+  "files": [
+    "ContactsService.js",
+    "CallHistoryService.js",
+    "SMSService.js",
+    "SettingsService.js",
+    "DTMFService.js"
+  ],
+  "dependencies": [
+    "axios",
+    "crypto-js"
+  ],
+  "checksum": "5e414ff767f23443e48472e27f7156d5626de623304b9a9156ba348351e26e47",
+  "created": "2025-10-02T15:20:08.717Z"
+}

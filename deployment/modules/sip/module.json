@@ -1,0 +1,14 @@
+{
+  "name": "SIP Module",
+  "version": "1.0.0",
+  "key": "sip",
+  "files": [
+    "SIPService.js"
+  ],
+  "dependencies": [
+    "sip.js",
+    "ws"
+  ],
+  "checksum": "7d427c3f1ec38bd531bee6e445d6df01a05bcfa3d623384d2466e5b3f35f19be",
+  "created": "2025-10-02T15:20:08.706Z"
+}

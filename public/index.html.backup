@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexPhone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Screen Reader Only Content */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: background 0.3s ease;
+        }
+
+        .status-indicator.connected {
+            background: #44ff44;
+        }
+
+        .connection-status {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-tab.active {
+            background: rgba(0, 123, 255, 0.2);
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Dialer */
+        .dialer {
+            text-align: center;
+        }
+
+        .dialer-input-section {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .dialer-input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 18px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .dialer-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .dialer-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .auto-complete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .auto-complete-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .auto-complete-item:hover,
+        .auto-complete-item.selected {
+            background: rgba(0, 123, 255, 0.2);
+        }
+
+        .auto-complete-item:last-child {
+            border-bottom: none;
+        }
+
+        .auto-complete-name {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .auto-complete-number {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        .display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            min-height: 60px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .display:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .dtmf-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dtmf-indicator {
+            margin-right: 8px;
+            font-size: 14px;
+            animation: dtmf-pulse 2s infinite;
+        }
+
+        @keyframes dtmf-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .dtmf-status.playing .dtmf-indicator {
+            animation: dtmf-active 0.2s ease;
+        }
+
+        @keyframes dtmf-active {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .quick-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .quick-action-btn {
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .key {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .key:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .key-letters {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 2px;
+        }
+
+        .call-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 24px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+        }
+
+        .btn-call {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-call:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-hangup {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-hangup:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Lists */
+        .list {
+            list-style: none;
+        }
+
+        .list-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .list-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .list-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 123, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .list-item-subtitle {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .list-item-meta {
+            text-align: right;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+
+        /* Incoming call overlay */
+        .incoming-call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .incoming-call-overlay.show {
+            display: flex;
+        }
+
+        .incoming-call-info {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .caller-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .caller-number {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+
+        .incoming-call-buttons {
+            display: flex;
+            gap: 40px;
+        }
+
+        .call-action-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .call-action-btn.answer {
+            background: #28a745;
+            color: white;
+        }
+
+        .call-action-btn.decline {
+            background: #dc3545;
+            color: white;
+        }
+
+        .call-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Recorder Styles */
+        .recorder-section {
+            text-align: center;
+        }
+
+        .recording-status {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .recording-status #recordingIndicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .recording-status.recording #recordingIndicator {
+            background: #dc3545;
+            animation: recording-pulse 1s infinite;
+        }
+
+        .recording-status.paused #recordingIndicator {
+            background: #ffc107;
+        }
+
+        @keyframes recording-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .recording-timer {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 18px;
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .recording-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .recording-settings,
+        .recent-recordings {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .recordings-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .recording-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .recording-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .recording-info {
+            flex: 1;
+        }
+
+        .recording-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .recording-meta {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .recording-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .recording-action-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .recording-action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .content {
+                padding: 12px;
+            }
+
+            .keypad {
+                gap: 8px;
+            }
+
+            .key {
+                font-size: 18px;
+            }
+
+            .recording-controls {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .recording-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Accessibility Live Regions for Screen Reader Announcements -->
+    <div aria-live="polite" aria-atomic="true" id="live-region-polite" class="sr-only"></div>
+    <div aria-live="assertive" aria-atomic="true" id="live-region-assertive" class="sr-only"></div>
+    <div aria-live="off" aria-atomic="false" id="live-region-status" class="sr-only"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span>FlexPhone</span>
+                <span>FlexPhone</span>
+            </div>
+            <div class="connection-info">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <div class="connection-status" id="connectionStatus">Disconnected</div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="dialer">Call</button>
+            <button class="nav-tab" data-tab="contacts">Contacts</button>
+            <button class="nav-tab" data-tab="history">History</button>
+            <button class="nav-tab" data-tab="messages">Messages</button>
+            <button class="nav-tab" data-tab="sip-clients">SIP Clients</button>
+            <button class="nav-tab" data-tab="recorder">Recorder</button>
+            <button class="nav-tab" data-tab="p2p-audio">P2P Audio</button>
+            <button class="nav-tab" data-tab="accounts">Accounts</button>
+            <button class="nav-tab" data-tab="settings">Settings</button>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Dialer Tab -->
+            <div class="tab-content active" id="dialer">
+                <div class="dialer">
+                    <!-- Input Field with Auto-Complete -->
+                    <div class="dialer-input-section">
+                        <input type="text" class="dialer-input" id="dialerInput"
+                               placeholder="Enter number, name or SMS..." autocomplete="off">
+                        <div class="auto-complete-dropdown" id="autoCompleteDropdown" style="display: none;"></div>
+                    </div>
+
+                    <!-- Input field for dialing -->
+                    <label for="dialerDisplay" class="visually-hidden">Dial Pad</label>
+                    <input type="text" class="display" id="dialerDisplay" placeholder="Dial a number or type a name" aria-label="Dial Pad" aria-describedby="dialHint" autofocus>
+                    <span id="dialHint" class="visually-hidden">Enter a phone number or contact name. Press Enter to call or use SMS button to send a message.</span>
+
+                    <!-- DTMF Status -->
+                    <div class="dtmf-status" id="dtmfStatus">
+                        <span class="dtmf-indicator" id="dtmfIndicator"></span>
+                        <span class="dtmf-text">DTMF Tones: <span id="dtmfEnabled">Enabled</span></span>
+                    </div>
+
+                    <div class="keypad">
+                        <button class="key" data-digit="1">1<div class="key-letters"></div></button>
+                        <button class="key" data-digit="2">2<div class="key-letters">ABC</div></button>
+                        <button class="key" data-digit="3">3<div class="key-letters">DEF</div></button>
+                        <button class="key" data-digit="4">4<div class="key-letters">GHI</div></button>
+                        <button class="key" data-digit="5">5<div class="key-letters">JKL</div></button>
+                        <button class="key" data-digit="6">6<div class="key-letters">MNO</div></button>
+                        <button class="key" data-digit="7">7<div class="key-letters">PQRS</div></button>
+                        <button class="key" data-digit="8">8<div class="key-letters">TUV</div></button>
+                        <button class="key" data-digit="9">9<div class="key-letters">WXYZ</div></button>
+                        <button class="key" data-digit="*">*</button>
+                        <button class="key" data-digit="0">0<div class="key-letters">+</div></button>
+                        <button class="key" data-digit="#">#</button>
+                    </div>
+
+                    <div class="call-buttons">
+                        <button class="btn btn-call" id="callBtn">Call</button>
+                        <button class="btn btn-hangup" id="hangupBtn" style="display: none;">Hang Up</button>
+                        <button class="btn btn-secondary" id="clearBtn">Clear</button>
+                        <button class="btn btn-secondary" id="smsBtn">SMS</button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" id="testDTMFBtn">🎵 Test DTMF</button>
+                        <button class="quick-action-btn" id="addContactBtn">👤 Add Contact</button>
+                        <button class="quick-action-btn" onclick="dialNumber('*43')">Echo Test</button>
+                        <button class="quick-action-btn" onclick="dialNumber('*44')">📊 Queue Status</button>
+                        <button class="quick-action-btn" onclick="dialNumber('*99')">🔑 Login/Logout</button>
+                        <button class="quick-action-btn" onclick="dialNumber('123')">🕐 Speaking Clock</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacts Tab -->
+            <div class="tab-content" id="contacts">
+                <div class="loading">Loading contacts...</div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-content" id="history">
+                <div class="loading">📋 Loading call history...</div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div class="tab-content" id="messages">
+                <div class="loading">Loading messages...</div>
+            </div>
+
+            <!-- SIP Clients Tab -->
+            <div class="tab-content" id="sip-clients">
+                <div class="sip-clients-section">
+                    <h3 style="margin-bottom: 20px; text-align: center;">🌐 Connected SIP Clients</h3>
+
+                    <!-- SIP Status Summary -->
+                    <div class="sip-status-summary" style="display: flex; gap: 12px; margin-bottom: 20px;">
+                        <div class="status-card" style="flex: 1; background: rgba(40, 167, 69, 0.2); border-radius: 8px; padding: 12px; text-align: center;">
+                            <div style="font-size: 18px; font-weight: bold;" id="onlineCount">0</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Online</div>
+                        </div>
+                        <div class="status-card" style="flex: 1; background: rgba(255, 193, 7, 0.2); border-radius: 8px; padding: 12px; text-align: center;">
+                            <div style="font-size: 18px; font-weight: bold;" id="busyCount">0</div>
+                            <div style="font-size: 12px; opacity: 0.8;">In Call</div>
+                        </div>
+                        <div class="status-card" style="flex: 1; background: rgba(220, 53, 69, 0.2); border-radius: 8px; padding: 12px; text-align: center;">
+                            <div style="font-size: 18px; font-weight: bold;" id="offlineCount">0</div>
+                            <div style="font-size: 12px; opacity: 0.8;">Offline</div>
+                        </div>
+                    </div>
+
+                    <!-- Clients List -->
+                    <div class="clients-list" id="sipClientsList">
+                        <div class="empty-state">No SIP clients detected</div>
+                    </div>
+
+                    <!-- Intercom Controls -->
+                    <div class="intercom-section" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 16px; margin-top: 20px;">
+                        <h4 style="margin-bottom: 12px;">📢 Intercom & Paging</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" class="form-input" id="intercomMessage" placeholder="Enter message..." style="flex: 1;">
+                            <button class="btn btn-call" id="sendIntercomBtn">📢 Send</button>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="quick-action-btn" onclick="sendQuickIntercom('All staff to front desk')">Staff to Front</button>
+                            <button class="quick-action-btn" onclick="sendQuickIntercom('Meeting in conference room')">🏢 Meeting Call</button>
+                            <button class="quick-action-btn" onclick="sendQuickIntercom('Emergency evacuation')">🚨 Emergency</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recorder Tab -->
+            <div class="tab-content" id="recorder">
+                <div class="recorder-section">
+                    <h3 style="margin-bottom: 20px; text-align: center;">Call Recorder</h3>
+
+                    <!-- Recording Status -->
+                    <div class="recording-status" id="recordingStatus">
+                        <div class="status-indicator" id="recordingIndicator"></div>
+                        <span id="recordingStatusText">Ready to Record</span>
+                        <div class="recording-timer" id="recordingTimer" style="display: none;">00:00</div>
+                    </div>
+
+                    <!-- Recording Controls -->
+                    <div class="recording-controls">
+                        <button class="btn btn-call" id="startRecordingBtn">Start Recording</button>
+                        <button class="btn btn-hangup" id="stopRecordingBtn" style="display: none;">⏹️ Stop Recording</button>
+                        <button class="btn btn-secondary" id="pauseRecordingBtn" style="display: none;">⏸️ Pause</button>
+                    </div>
+
+                    <!-- Recording Settings -->
+                    <div class="recording-settings">
+                        <h4 style="margin: 20px 0 12px 0;">Recording Settings</h4>
+
+                        <div class="form-group">
+                            <label class="form-label" for="recordingMode">Recording Mode</label>
+                            <select class="form-select" id="recordingMode" aria-label="Recording Mode" tabindex="0" role="combobox" aria-expanded="false">
+                                <option value="local">Local Recording</option>
+                                <option value="remote">Remote (FlexPBX)</option>
+                                <option value="both">Both Local & Remote</option>
+                            </select>
+
+                            <!-- Free Tier Recording Warning -->
+                            <div id="freeTierRecordingWarning" style="margin-top: 8px; padding: 8px 12px; background: rgba(220, 53, 69, 0.2); border-radius: 6px; border-left: 3px solid #dc3545; display: none;">
+                                <div style="font-size: 12px; color: #dc3545; font-weight: 600;">🚫 FREE TIER RESTRICTION</div>
+                                <div style="font-size: 11px; color: rgba(255, 255, 255, 0.8); margin-top: 4px;">
+                                    Local recording is disabled on free tier. Only remote server recording is available if the server permits it. Upgrade to Professional ($29/month) or Lifetime ($299) for local recording capabilities.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="audioQuality">Audio Quality</label>
+                            <select class="form-select" id="audioQuality" aria-label="Audio Quality" tabindex="0" role="combobox" aria-expanded="false">
+                                <option value="high">High (WAV 44.1kHz)</option>
+                                <option value="medium">Medium (MP3 128kbps)</option>
+                                <option value="low">Low (MP3 64kbps)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Auto-Record Calls</label>
+                            <select class="form-select" id="autoRecord">
+                                <option value="none">Disabled</option>
+                                <option value="all">All Calls</option>
+                                <option value="incoming">Incoming Only</option>
+                                <option value="outgoing">Outgoing Only</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Storage Location</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" class="form-input" id="storageLocation"
+                                       placeholder="/Users/username/Documents/FlexPhone Recordings" readonly>
+                                <button class="btn btn-secondary" id="browseStorageBtn">📁</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Recordings -->
+                    <div class="recent-recordings">
+                        <h4 style="margin: 20px 0 12px 0;">Recent Recordings</h4>
+                        <div class="recordings-list" id="recordingsList">
+                            <div class="empty-state">No recordings yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- P2P Audio Tab -->
+            <div class="tab-content" id="p2p-audio">
+                <div class="p2p-form">
+                    <h3 style="margin-bottom: 20px;">Direct P2P Audio Chat</h3>
+
+                    <!-- Connection Section -->
+                    <div class="form-group">
+                        <label class="form-label" for="p2pMode">Connection Mode</label>
+                        <select class="form-control" id="p2pMode">
+                            <option value="host">Host Session</option>
+                            <option value="join">Join Session</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="hostOptions">
+                        <label class="form-label" for="sessionName">Session Name</label>
+                        <input type="text" class="form-control" id="sessionName" placeholder="My Audio Session">
+
+                        <label class="form-label" for="sessionPassword" style="margin-top: 10px;">Password (Optional)</label>
+                        <input type="password" class="form-control" id="sessionPassword" placeholder="Leave blank for no password">
+
+                        <div class="p2p-info" style="margin-top: 10px; font-size: 0.9em; color: #b0b0b0;">
+                            Your IP: <span id="localIP">Detecting...</span><br>
+                            Port: 10999 (UDP/TCP)
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="joinOptions" style="display: none;">
+                        <label class="form-label" for="remoteIP">Remote IP Address</label>
+                        <input type="text" class="form-control" id="remoteIP" placeholder="192.168.1.100 or session.example.com">
+
+                        <label class="form-label" for="joinSessionName" style="margin-top: 10px;">Session Name</label>
+                        <input type="text" class="form-control" id="joinSessionName" placeholder="Session to join">
+
+                        <label class="form-label" for="joinPassword" style="margin-top: 10px;">Password</label>
+                        <input type="password" class="form-control" id="joinPassword" placeholder="Enter password if required">
+                    </div>
+
+                    <!-- Audio Quality Settings -->
+                    <div class="form-group">
+                        <label class="form-label" for="audioCodec">Audio Quality</label>
+                        <select class="form-control" id="audioCodec">
+                            <option value="opus-64">Opus 64 kbps (Default)</option>
+                            <option value="opus-128">Opus 128 kbps (High Quality)</option>
+                            <option value="opus-256">Opus 256 kbps (Ultra Quality)</option>
+                            <option value="pcm-16">PCM 16-bit (Uncompressed)</option>
+                            <option value="pcm-24">PCM 24-bit (Studio Quality)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="bufferSize">Buffer Size (Latency)</label>
+                        <select class="form-control" id="bufferSize">
+                            <option value="64">64 samples (Ultra Low - 1-3ms)</option>
+                            <option value="128">128 samples (Low - 3-6ms)</option>
+                            <option value="256" selected>256 samples (Normal - 6-12ms)</option>
+                            <option value="512">512 samples (Safe - 12-25ms)</option>
+                        </select>
+                    </div>
+
+                    <!-- Connection Controls -->
+                    <div class="form-row">
+                        <button type="button" class="btn btn-primary" id="startP2P" style="margin-right: 10px;">Start Session</button>
+                        <button type="button" class="btn btn-secondary" id="stopP2P" disabled>Disconnect</button>
+                    </div>
+
+                    <!-- Active Connections -->
+                    <div class="form-group" id="activeConnections" style="display: none;">
+                        <h4 style="margin: 20px 0 10px 0;">Active Connections</h4>
+                        <div id="connectionsList" class="connections-list">
+                            <!-- Dynamic connection list will appear here -->
+                        </div>
+                    </div>
+
+                    <!-- Audio Controls for P2P -->
+                    <div class="form-group" id="p2pAudioControls" style="display: none;">
+                        <h4 style="margin: 20px 0 10px 0;">Audio Controls</h4>
+
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <label class="form-label" style="margin-right: 10px; min-width: 100px;">Input Volume:</label>
+                            <input type="range" id="p2pInputVolume" min="0" max="100" value="80" style="flex: 1;">
+                            <span id="inputVolumeValue" style="margin-left: 10px; min-width: 40px;">80%</span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <label class="form-label" style="margin-right: 10px; min-width: 100px;">Output Volume:</label>
+                            <input type="range" id="p2pOutputVolume" min="0" max="100" value="70" style="flex: 1;">
+                            <span id="outputVolumeValue" style="margin-left: 10px; min-width: 40px;">70%</span>
+                        </div>
+
+                        <div class="form-row">
+                            <button type="button" class="btn" id="muteInput">Mute Mic</button>
+                            <button type="button" class="btn" id="muteOutput" style="margin-left: 10px;">Mute Audio</button>
+                            <button type="button" class="btn btn-warning" id="resetAudioDefaults" style="margin-left: 10px;">Reset Audio to Defaults</button>
+                            <button type="button" class="btn btn-info" id="testSound" style="margin-left: 10px;">Test Sound</button>
+                            <button type="button" class="btn btn-secondary" id="runAudioDiagnostics" style="margin-left: 10px;">Audio Diagnostics</button>
+                        </div>
+                    </div>
+
+                    <!-- Status Display -->
+                    <div class="p2p-status" id="p2pStatus" style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px; display: none;">
+                        <div id="statusText">Ready to connect</div>
+                        <div id="qualityInfo" style="font-size: 0.85em; margin-top: 5px; color: #b0b0b0;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <div class="settings-form">
+                    <h3 style="margin-bottom: 20px;">SIP Configuration</h3>
+
+                    <div class="form-group">
+                        <label class="form-label" for="sipProvider">Provider</label>
+                        <select class="form-select" id="sipProvider" aria-label="SIP Provider" tabindex="0" role="combobox" aria-expanded="false">
+                            <option value="FLEXPBX">FlexPBX</option>
+                            <option value="CALLCENTRIC">CallCentric</option>
+                            <option value="VOIPMS">VoIP.ms</option>
+                            <option value="TWILIO">Twilio</option>
+                            <option value="GOOGLE_VOICE">Google Voice</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+
+                        <!-- Free Tier Limitation Warning -->
+                        <div id="freeTierWarning" style="margin-top: 8px; padding: 8px 12px; background: rgba(255, 193, 7, 0.2); border-radius: 6px; border-left: 3px solid #ffc107; display: none;">
+                            <div style="font-size: 12px; color: #ffc107; font-weight: 600;">FREE TIER LIMITATIONS</div>
+                            <div style="font-size: 11px; color: rgba(255, 255, 255, 0.8); margin-top: 4px;">
+                                • Maximum 2 external providers (including FlexPBX)<br>
+                                • 1 concurrent call only<br>
+                                • No local recording (remote server recording only if permitted)<br>
+                                • External providers require subscription or one-time license
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Server</label>
+                        <input type="text" class="form-input" id="sipServer" placeholder="sip.example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Port</label>
+                        <input type="number" class="form-input" id="sipPort" placeholder="5060">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="sipUsername" placeholder="your-username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="sipPassword" placeholder="your-password">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" class="form-input" id="sipDisplayName" placeholder="Your Name">
+                    </div>
+
+                    <hr style="margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.1);">
+
+                    <!-- Audio Device Settings -->
+                    <h4 style="margin-bottom: 16px;">Audio Devices</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">Input Device (Microphone)</label>
+                        <select class="form-select" id="audioInputDevice">
+                            <option value="">Default Input Device</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Output Device (Speaker)</label>
+                        <select class="form-select" id="audioOutputDevice">
+                            <option value="">Default Output Device</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ring Device</label>
+                        <select class="form-select" id="audioRingDevice">
+                            <option value="">Same as Output Device</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ringtone</label>
+                        <select class="form-select" id="ringtoneSelect">
+                            <option value="default">Default Ring</option>
+                            <option value="classic">Classic Phone</option>
+                            <option value="modern">Modern Ring</option>
+                            <option value="bell">Bell</option>
+                            <option value="chime">Chime</option>
+                            <option value="custom">Custom Ringtone...</option>
+                        </select>
+                        <div style="margin-top: 8px; display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" id="testRingtoneBtn" style="font-size: 12px; padding: 6px 12px;">Test Ringtone</button>
+                            <button class="btn btn-secondary" id="browseRingtoneBtn" style="font-size: 12px; padding: 6px 12px; display: none;">📁 Browse</button>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.1);">
+
+                    <!-- Advanced SIP Features -->
+                    <h4 style="margin-bottom: 16px;">Advanced Features</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="autoAnswerEnabled" style="margin-right: 8px;">
+                            Auto-Answer Incoming Calls
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Auto-Answer Delay (seconds)</label>
+                        <input type="number" class="form-input" id="autoAnswerDelay" value="3" min="0" max="10">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="handsFreeMode" style="margin-right: 8px;">
+                            Hands-Free Mode
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="intercomEnabled" style="margin-right: 8px;">
+                            Enable Intercom Support
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="flexPhoneIntegration" style="margin-right: 8px;">
+                            FlexPhone Auto-Detection
+                        </label>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.1);">
+
+                    <!-- Startup Settings -->
+                    <h4 style="margin-bottom: 16px;">🚀 Startup Settings</h4>
+
+                    <div class="form-group">
+                        <label class="form-label" for="announceScreenReaderOnStartup">Screen Reader Announcements</label>
+                        <select id="announceScreenReaderOnStartup" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #333; color: white;">
+                            <option value="auto" selected>Auto (Announce if detected)</option>
+                            <option value="always">Always Announce</option>
+                            <option value="never">Never Announce</option>
+                        </select>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            Controls whether FlexPhone announces screen reader status on startup. Welcome tones always play regardless of this setting.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="welcomeTonesEnabled" checked style="margin-right: 8px;">
+                            Play Welcome Tones on Startup
+                        </label>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            Pleasant C major chord progression played when FlexPhone starts
+                        </small>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: 1px solid rgba(255, 255, 255, 0.1);">
+
+                    <!-- VoicePack Settings -->
+                    <h4 style="margin-bottom: 16px;">🎵 VoicePack Audio</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="voicePackEnabled" checked style="margin-right: 8px;">
+                            Enable VoicePack Audio Prompts
+                        </label>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            High-quality voice feedback for actions and DTMF digits
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="voicePackVolume">VoicePack Volume</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="range" id="voicePackVolume" min="0" max="100" value="80" style="flex: 1;">
+                            <span id="voicePackVolumeValue" style="margin-left: 10px; min-width: 40px;">80%</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="voicePackSelection">Voice Pack</label>
+                        <select class="form-control" id="voicePackSelection">
+                            <option value="default">Default (System Beeps)</option>
+                            <option value="VoicePack01" selected>VoicePack01 (Voice Prompts)</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+
+                    <!-- Action-Specific Audio Settings -->
+                    <h5 style="margin: 16px 0 12px 0;">Action Audio Settings</h5>
+
+                    <div class="voicepack-actions" id="voicePackActions">
+                        <!-- F-Key Actions -->
+                        <div class="action-setting">
+                            <div class="action-info">
+                                <strong>F1 - Phone Pickup</strong>
+                                <div style="display: flex; align-items: center; margin-top: 4px;">
+                                    <label style="margin-right: 15px;">
+                                        <input type="checkbox" id="f1_enabled" checked> Enabled
+                                    </label>
+                                    <label style="margin-right: 15px;">
+                                        Volume: <input type="range" id="f1_volume" min="0" max="100" value="80" style="width: 60px;">
+                                        <span id="f1_volume_val">80%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-setting">
+                            <div class="action-info">
+                                <strong>F2 - Hang Up</strong>
+                                <div style="display: flex; align-items: center; margin-top: 4px;">
+                                    <label style="margin-right: 15px;">
+                                        <input type="checkbox" id="f2_enabled" checked> Enabled
+                                    </label>
+                                    <label style="margin-right: 15px;">
+                                        Volume: <input type="range" id="f2_volume" min="0" max="100" value="80" style="width: 60px;">
+                                        <span id="f2_volume_val">80%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-setting">
+                            <div class="action-info">
+                                <strong>F3 - Hold/Unhold</strong>
+                                <div style="display: flex; align-items: center; margin-top: 4px;">
+                                    <label style="margin-right: 15px;">
+                                        <input type="checkbox" id="f3_enabled" checked> Enabled
+                                    </label>
+                                    <label style="margin-right: 15px;">
+                                        Volume: <input type="range" id="f3_volume" min="0" max="100" value="60" style="width: 60px;">
+                                        <span id="f3_volume_val">60%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-setting">
+                            <div class="action-info">
+                                <strong>F11/F12 - Volume Control</strong>
+                                <div style="display: flex; align-items: center; margin-top: 4px;">
+                                    <label style="margin-right: 15px;">
+                                        <input type="checkbox" id="volume_enabled" checked> Enabled
+                                    </label>
+                                    <label style="margin-right: 15px;">
+                                        Volume: <input type="range" id="volume_volume" min="0" max="100" value="90" style="width: 60px;">
+                                        <span id="volume_volume_val">90%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-setting">
+                            <div class="action-info">
+                                <strong>DTMF Digits</strong>
+                                <div style="display: flex; align-items: center; margin-top: 4px;">
+                                    <label style="margin-right: 15px;">
+                                        <input type="checkbox" id="dtmf_enabled" checked> Enabled
+                                    </label>
+                                    <label style="margin-right: 15px;">
+                                        Volume: <input type="range" id="dtmf_volume" min="0" max="100" value="80" style="width: 60px;">
+                                        <span id="dtmf_volume_val">80%</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Ducking Settings -->
+                    <h5 style="margin: 16px 0 12px 0;">Audio Ducking for Caller ID</h5>
+
+                    <div class="form-group">
+                        <label class="form-label" for="duckingLevel">Ducking Level</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="range" id="duckingLevel" min="0" max="100" value="70" step="5" style="flex: 1;">
+                            <span id="duckingLevelValue" style="margin-left: 10px; min-width: 60px;">70%</span>
+                        </div>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            100% = No ducking, 0% = Complete ducking
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="duckingSpeed">Ducking Speed</label>
+                        <select class="form-control" id="duckingSpeed">
+                            <option value="slow">Slow Duck (2 seconds)</option>
+                            <option value="medium" selected>Medium Duck (1 second)</option>
+                            <option value="fast">Fast Duck (0.5 seconds)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="enableDucking" checked style="margin-right: 8px;">
+                            Enable Audio Ducking during Caller ID
+                        </label>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            Reduces ringtone volume while announcing caller ID
+                        </small>
+                    </div>
+
+                    <!-- Call Monitoring Settings -->
+                    <h5 style="margin: 16px 0 12px 0;">Call Monitoring</h5>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="enableCallMonitoring" style="margin-right: 8px;">
+                            Allow monitoring calls when on hold
+                        </label>
+                        <small style="color: #b0b0b0; display: block; margin-top: 4px;">
+                            When enabled, you can hear the other party even when they are on hold (Privacy warning: Use only with consent)
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 16px;">
+                        <button type="button" class="btn btn-secondary" id="testVoicePack">🔊 Test VoicePack</button>
+                        <button type="button" class="btn btn-secondary" id="testDucking" style="margin-left: 10px;">🔊 Test Ducking</button>
+                        <button type="button" class="btn btn-secondary" id="resetVoicePackSettings" style="margin-left: 10px;">🔄 Reset to Defaults</button>
+                    </div>
+
+                    <div class="call-buttons">
+                        <button class="btn btn-call" id="connectBtn">Connect</button>
+                        <button class="btn btn-hangup" id="disconnectBtn" style="display: none;">Disconnect</button>
+                        <button class="btn btn-secondary" id="saveSettingsBtn">💾 Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incoming Call Overlay -->
+        <div class="incoming-call-overlay" id="incomingCallOverlay">
+            <div class="incoming-call-info">
+                <div class="caller-name" id="callerName">Unknown Caller</div>
+                <div class="caller-number" id="callerNumber">+1 (555) 123-4567</div>
+            </div>
+            <div class="incoming-call-buttons">
+                <button class="call-action-btn answer" id="answerBtn">Answer</button>
+                <button class="call-action-btn decline" id="declineBtn">Decline</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug: Test if JavaScript is executing
+        console.log('🚀 Inline JavaScript executing!');
+
+        // Test basic alert on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOMContentLoaded fired from inline script');
+
+            // Try to manually initialize if app.js isn't working
+            setTimeout(() => {
+                if (typeof FlexPhoneApp === 'undefined') {
+                    console.error('❌ FlexPhoneApp class not loaded from app.js!');
+                    alert('JavaScript loading issue detected. App.js may not be loading correctly.');
+                } else {
+                    console.log('✅ FlexPhoneApp class is available');
+                    if (!window.flexPhoneApp) {
+                        console.log('📱 Manually initializing FlexPhoneApp...');
+                        window.flexPhoneApp = new FlexPhoneApp();
+                    }
+                }
+            }, 1000);
+        });
+    </script>
+    <script src="./app.js"></script>
+</body>
+</html>

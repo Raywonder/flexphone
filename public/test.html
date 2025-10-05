@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JS Test</title>
+</head>
+<body>
+    <h1>JavaScript Test</h1>
+    <button onclick="alert('Button clicked!')">Test Button</button>
+    <div id="status">Loading...</div>
+
+    <script>
+        console.log('Inline script executing!');
+        document.getElementById('status').innerHTML = 'JavaScript is working!';
+
+        // Test if we can create elements
+        const testDiv = document.createElement('div');
+        testDiv.innerHTML = '<p style="color: green;">✓ Dynamic content created</p>';
+        document.body.appendChild(testDiv);
+
+        // Test setTimeout
+        setTimeout(() => {
+            const timeDiv = document.createElement('div');
+            timeDiv.innerHTML = '<p style="color: blue;">✓ setTimeout working</p>';
+            document.body.appendChild(timeDiv);
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "sip": {
+    "provider": "custom",
+    "autoRegister": false,
+    "requiresVPN": true
+  },
+  "security": {
+    "encryption": "required",
+    "certificateValidation": true,
+    "audit": true
+  },
+  "deployment": {
+    "managedUpdates": true,
+    "remoteConfiguration": true
+  }
+}

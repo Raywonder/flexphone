@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio System Test</h1>
+
+    <div id="status">Status: Ready</div>
+
+    <button onclick="testBasicAudio()">Test Basic Audio</button>
+    <button onclick="testAudioContext()">Test AudioContext</button>
+    <button onclick="testBeep()">Test Beep</button>
+    <button onclick="listDevices()">List Audio Devices</button>
+    <button onclick="testMicrophone()">Test Microphone</button>
+
+    <div id="output"></div>
+
+    <script>
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = 'Status: ' + msg;
+            console.log(msg);
+        }
+
+        function addOutput(msg) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${msg}</p>`;
+        }
+
+        async function testBasicAudio() {
+            updateStatus('Testing basic audio...');
+            try {
+                const audio = new Audio('assets/Sound-Test.wav');
+                audio.volume = 0.5;
+                await audio.play();
+                updateStatus('Audio playing - you should hear sound');
+                addOutput('✅ Basic audio test successful');
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                addOutput('❌ Basic audio failed: ' + error.message);
+            }
+        }
+
+        async function testAudioContext() {
+            updateStatus('Testing AudioContext...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                addOutput(`AudioContext created - Sample rate: ${audioContext.sampleRate}Hz, State: ${audioContext.state}`);
+
+                // Create a simple tone
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 440; // A4 note
+                gainNode.gain.value = 0.1;
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    updateStatus('Tone complete');
+                }, 500);
+
+                updateStatus('Playing 440Hz tone for 0.5 seconds');
+                addOutput('✅ AudioContext test successful');
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                addOutput('❌ AudioContext failed: ' + error.message);
+            }
+        }
+
+        function testBeep() {
+            updateStatus('Testing beep...');
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.2;
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    audioContext.close();
+                    updateStatus('Beep complete');
+                }, 200);
+
+                updateStatus('Beeping...');
+                addOutput('✅ Beep test successful');
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                addOutput('❌ Beep failed: ' + error.message);
+            }
+        }
+
+        async function listDevices() {
+            updateStatus('Listing audio devices...');
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+
+                const audioInputs = devices.filter(d => d.kind === 'audioinput');
+                const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+                addOutput(`Found ${audioInputs.length} input devices:`);
+                audioInputs.forEach((device, i) => {
+                    addOutput(`  Input ${i + 1}: ${device.label || 'Unnamed'}`);
+                });
+
+                addOutput(`Found ${audioOutputs.length} output devices:`);
+                audioOutputs.forEach((device, i) => {
+                    addOutput(`  Output ${i + 1}: ${device.label || 'Unnamed'}`);
+                });
+
+                updateStatus('Device enumeration complete');
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                addOutput('❌ Device listing failed: ' + error.message);
+            }
+        }
+
+        async function testMicrophone() {
+            updateStatus('Testing microphone access...');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+
+                source.connect(analyser);
+                analyser.fftSize = 256;
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                let maxLevel = 0;
+                const checkLevel = () => {
+                    analyser.getByteFrequencyData(dataArray);
+                    const level = Math.max(...dataArray);
+                    if (level > maxLevel) maxLevel = level;
+                };
+
+                const interval = setInterval(checkLevel, 100);
+
+                setTimeout(() => {
+                    clearInterval(interval);
+                    stream.getTracks().forEach(track => track.stop());
+                    audioContext.close();
+
+                    addOutput(`✅ Microphone test complete. Max level detected: ${maxLevel}/255`);
+                    updateStatus('Microphone test complete');
+                }, 3000);
+
+                updateStatus('Listening for 3 seconds... Make some noise!');
+                addOutput('🎤 Microphone access granted, monitoring levels...');
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                addOutput('❌ Microphone test failed: ' + error.message);
+            }
+        }
+
+        // Test on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateStatus('Page loaded - ready for testing');
+            addOutput('🚀 Audio test page initialized');
+        });
+    </script>
+</body>
+</html>
