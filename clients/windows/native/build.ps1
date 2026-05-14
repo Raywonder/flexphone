@@ -1,0 +1,100 @@
+# Flex Phone Windows Build Script
+# Run this script from PowerShell on Windows
+
+param(
+    [string]$Configuration = "Release",
+    [string]$Version = "1.0.3",
+    [string]$Build = "53",
+    [switch]$Clean,
+    [switch]$Publish
+)
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "Flex Phone Windows Build" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+
+$ProjectDir = $PSScriptRoot
+$SolutionFile = Join-Path $ProjectDir "FlexPhone.sln"
+$ProjectFile = Join-Path $ProjectDir "FlexPhone\FlexPhone.csproj"
+$OutputDir = Join-Path $ProjectDir "bin\$Configuration"
+
+# Check for .NET SDK
+Write-Host "Checking for .NET SDK..." -ForegroundColor Yellow
+$dotnetVersion = dotnet --version
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: .NET SDK not found. Please install .NET 8 SDK." -ForegroundColor Red
+    exit 1
+}
+Write-Host "Found .NET SDK: $dotnetVersion" -ForegroundColor Green
+
+# Clean if requested
+if ($Clean) {
+    Write-Host "Cleaning build output..." -ForegroundColor Yellow
+    dotnet clean $ProjectFile -c $Configuration
+    if (Test-Path $OutputDir) {
+        Remove-Item -Recurse -Force $OutputDir
+    }
+}
+
+# Restore NuGet packages
+Write-Host "Restoring NuGet packages..." -ForegroundColor Yellow
+dotnet restore $ProjectFile
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Failed to restore packages." -ForegroundColor Red
+    exit 1
+}
+
+# Build the project
+Write-Host "Building Flex Phone ($Configuration)..." -ForegroundColor Yellow
+dotnet build $ProjectFile -c $Configuration --no-restore /p:Version="$Version" /p:FileVersion="$Version.$Build" /p:InformationalVersion="$Version+$Build"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Build failed." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Build completed successfully!" -ForegroundColor Green
+
+# Publish if requested. WPF native dependencies are kept in a folder build; the
+# earlier single-file publish path can fail native DLL resolution on Windows.
+if ($Publish) {
+    Write-Host "Publishing self-contained application..." -ForegroundColor Yellow
+
+    $PublishDir = Join-Path $ProjectDir "publish"
+
+    # Publish for Windows x64
+    dotnet publish $ProjectFile -c $Configuration -r win-x64 --self-contained true -o "$PublishDir\win-x64" /p:PublishSingleFile=false /p:Version="$Version" /p:FileVersion="$Version.$Build" /p:InformationalVersion="$Version+$Build"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Publish failed for win-x64." -ForegroundColor Red
+        exit 1
+    }
+
+    # Publish for Windows x86
+    dotnet publish $ProjectFile -c $Configuration -r win-x86 --self-contained true -o "$PublishDir\win-x86" /p:PublishSingleFile=false /p:Version="$Version" /p:FileVersion="$Version.$Build" /p:InformationalVersion="$Version+$Build"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Publish failed for win-x86." -ForegroundColor Red
+        exit 1
+    }
+
+    # Publish for Windows ARM64
+    dotnet publish $ProjectFile -c $Configuration -r win-arm64 --self-contained true -o "$PublishDir\win-arm64" /p:PublishSingleFile=false /p:Version="$Version" /p:FileVersion="$Version.$Build" /p:InformationalVersion="$Version+$Build"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Publish failed for win-arm64." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "Published to: $PublishDir" -ForegroundColor Green
+}
+
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "Build Complete!" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Output: $OutputDir" -ForegroundColor White
+
+if ($Publish) {
+    Write-Host "Published builds available in: $ProjectDir\publish" -ForegroundColor White
+}

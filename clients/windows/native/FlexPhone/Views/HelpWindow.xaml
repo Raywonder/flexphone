@@ -1,0 +1,190 @@
+<Window x:Class="FlexPhone.Views.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Flex Phone Help" Height="640" Width="760"
+        MinHeight="520" MinWidth="560"
+        WindowStartupLocation="CenterOwner"
+        Background="#101418" Foreground="#f7f7f7"
+        KeyDown="Window_KeyDown"
+        AutomationProperties.Name="Flex Phone help">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="MinWidth" Value="90"/>
+            <Setter Property="Padding" Value="12,6"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="HeadingText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="SubHeadingText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,6"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="18">
+        <Button DockPanel.Dock="Bottom" Content="Close" HorizontalAlignment="Right"
+                Click="CloseButton_Click"
+                AutomationProperties.Name="Close help"/>
+
+        <TabControl x:Name="HelpTabs"
+                    AutomationProperties.Name="Flex Phone help topics">
+            <TabItem Header="Getting Started" AutomationProperties.Name="Getting Started">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Getting started with Flex Phone"/>
+                        <TextBlock Text="Flex Phone lets you sign in to a Flex PBX extension, make and receive calls, use call queue features, and manage multiple lines from one accessible Windows app."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="First steps"/>
+                        <TextBlock Text="1. Enter your Flex PBX server. The normal default is pbx.devinecreations.net unless your administrator gives you another address."/>
+                        <TextBlock Text="2. Enter your email address and choose Get extension."/>
+                        <TextBlock Text="3. Open the authorization link from Flex PBX, approve this device, then choose Finish sign in."/>
+                        <TextBlock Text="4. Leave Remember this sign-in checked if this is your trusted Windows account and you want Flex Phone to sign in automatically next time."/>
+                        <TextBlock Text="5. After sign in, enter a number, extension, or SIP address in the dial box and choose Dial. You can also press Enter to start the call."/>
+                        <TextBlock Text="6. Use Queue in or Queue out if your role allows queue work. Automatic queue sign-in and sign-out can be managed by your Flex PBX administrator, team manager, group policy, or your own user setting when allowed."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="If you already have login details"/>
+                        <TextBlock Text="Open Use existing extension or another provider. Enter the login information for that provider, extension, or existing account. Flex PBX will still use email for allowed account recovery."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="First time after installing"/>
+                        <TextBlock Text="If you used the portable copy before installing, Flex Phone can offer to remove the old Downloads copy after your account is safely signed in on the installed copy."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Sign In and Accounts" AutomationProperties.Name="Sign In and Accounts">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Sign in and accounts"/>
+                        <TextBlock Text="The normal sign-in path asks for only the Flex PBX server and your email address. Flex PBX sends or opens an authorization link, then the app links this device to the extension that belongs to your account."/>
+                        <TextBlock Text="Remember this sign-in stores the extension details for this Windows user with Windows data protection, so Flex Phone can sign in automatically next time. It does not show passwords, SIP secrets, tokens, or pairing codes in the app."/>
+                        <TextBlock Text="File, Forget remembered sign-in removes the saved sign-in from this Windows user. Use it before sharing this Windows account or moving the computer to another person."/>
+                        <TextBlock Text="Use existing extension or another provider is for advanced setups where you already have an extension number, provider login, username and password, or a supported alternate login method."/>
+                        <TextBlock Text="Reset username, Reset password, and Get password ask Flex PBX to email allowed account recovery information. Flex PBX decides which actions are allowed for the extension and sends the message to the account owner email."/>
+                        <TextBlock Text="The account selector announces the selected extension and server. Multiple accounts can be signed in, and calls can use separate lines without mixing the account sessions."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Calling" AutomationProperties.Name="Calling">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Calling and call controls"/>
+                        <TextBlock Text="Dial starts an outgoing call to the number, extension, or SIP address in the dial box. Pick up answers an incoming call. End hangs up the active call."/>
+                        <TextBlock Text="Hold places the current call on hold. Resume returns to a held call. Transfer sends the current call to the transfer destination. Mute and Unmute control your microphone for the active call."/>
+                        <TextBlock Text="Intercom calls the destination as an intercom call when your Flex PBX allows it. Voicemail checks voicemail for the signed-in extension. Record starts or stops server-side call recording when allowed."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="Incoming calls"/>
+                        <TextBlock Text="Incoming calls use the next free line. Flex Phone announces the caller and line number, plays the configured sound, and shows a notification."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="Waiting calls"/>
+                        <TextBlock Text="Waiting shows calls that may be available for pickup. Pick up answers a ringing or waiting call when Flex PBX offers it to your extension."/>
+                        <TextBlock Style="{StaticResource SubHeadingText}" Text="Messages"/>
+                        <TextBlock Text="Messages opens SMS and provider messages for your extension when Flex PBX and the number provider support it. Sending and receiving use Flex PBX, so provider details such as Callcentric stay on the server."/>
+                        <TextBlock Text="The Messages window has a message history, To field, Message field, Refresh, Send, and Close. Refresh asks Flex PBX for the latest messages. Send asks Flex PBX to send through the configured number provider for your extension."/>
+                        <TextBlock Text="If SMS is not enabled for the number or provider, Flex PBX will report that messages are not available instead of trying to send locally from the Windows app."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Lines and Keyboard" AutomationProperties.Name="Lines and Keyboard">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Lines and keyboard use"/>
+                        <TextBlock Text="Flex Phone supports up to 8 lines. The line list says each line number and state, such as Line 1, free, or Line 2, call with Matthew, on hold."/>
+                        <TextBlock Text="Enter starts a call on the selected line. If no line is selected, Flex Phone uses the first free line and announces which line it is using."/>
+                        <TextBlock Text="Control plus 1 through Control plus 8 selects a line. If you switch away from an active call, Flex Phone places that call on hold. If the chosen line is on hold, Flex Phone resumes it."/>
+                        <TextBlock Text="Control plus 9 starts the Flex PBX music-on-hold preview so you can hear the streaming hold music from the on-hold server."/>
+                        <TextBlock Text="Press Escape twice in the main window to minimize Flex Phone when you are not in a call. During an active call, Escape twice ends the call."/>
+                        <TextBlock Text="When Flex Phone is minimized, Control+Alt+A answers an incoming call, Control+Alt+D declines it, and Control+Alt+H answers it and places it on hold."/>
+                        <TextBlock Text="In the help manual, press Escape once to close help."/>
+                        <TextBlock Text="Alt opens the menu bar. Tab stays inside the main window controls unless you press Alt. All primary actions also exist in the menus for keyboard users."/>
+                        <TextBlock Text="Shift plus F10 or the Application key opens normal Windows context actions when a focused control supports them."/>
+                        <TextBlock Text="The number buttons say only the key they send: 1 through 9, star, 0, and pound. During a call they send DTMF tones."/>
+                        <TextBlock Text="Number row and numpad keys send DTMF during a call. When not in a call, they add digits to the dial box. Shift plus 3 sends pound, and Shift plus 8 or numpad multiply sends star."/>
+                        <TextBlock Text="The visual keypad is kept out of the normal Tab order. When focus is on the keypad, use arrow keys to choose a key and Enter to press it."/>
+                        <TextBlock Text="Spacebar during a call can mute or unmute, hold or resume, or request conference behavior depending on your Calling setting."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Queue and Status" AutomationProperties.Name="Queue and Status">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Queue and status"/>
+                        <TextBlock Text="Queue in logs your extension in to the call queue. Queue out logs your extension out. The main status tells you whether you are logged in or logged out and how long you have been in that state."/>
+                        <TextBlock Text="The Queue button is a single toggle. It announces the current queue state and duration before changing between Queue in and Queue out."/>
+                        <TextBlock Text="Automatic queue sign-in and sign-out defaults to off. Flex PBX can set it by server, role, group, team, or user where your account is allowed to manage it."/>
+                        <TextBlock Text="DND turns do not disturb on or off using the Flex PBX DND toggle. When DND is on, Flex Phone will not auto-answer calls."/>
+                        <TextBlock Text="Control 9 toggles call screening for the signed-in extension. Music on hold remains available from the PBX feature code or server menu when configured."/>
+                        <TextBlock Text="People opens presence information when Flex PBX provides it, including other users and agents who are available, busy, or in another status."/>
+                        <TextBlock Text="Flex Phone sends non-secret device status to Flex PBX so administrators can see online devices, queue state, app version, active line, active call count, and whether the device appears to be on tailnet, local network, or public network."/>
+                        <TextBlock Text="Queue status includes how long you have been logged in or logged out. This status is shown in the main window and included in device status updates so team leads and administrators can see agent availability."/>
+                        <TextBlock Text="Automatic queue sign-in and sign-out can stay off for normal users, use your own user setting, follow group or team policy, or follow server policy when Flex PBX allows that role."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Menus and Windows" AutomationProperties.Name="Menus and Windows">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Menus and windows"/>
+                        <TextBlock Text="File contains Settings, Log out, Forget remembered sign-in, and Exit."/>
+                        <TextBlock Text="When Flex Phone is running as a portable copy, File also contains Install full version. It downloads the installer from Flex PBX, keeps your remembered sign-in for this Windows account, closes the portable copy, installs the full app, and opens the installed copy. If Windows asks permission to install, choose Yes."/>
+                        <TextBlock Text="Call contains Dial, Pick up, End, Hold, Resume, Transfer, Mute, Unmute, Intercom, and Call screening toggle."/>
+                        <TextBlock Text="Lines contains Line 1 through Line 8. Choosing a line makes it active. If another line already has a call, Flex Phone holds or resumes lines as needed."/>
+                        <TextBlock Text="Queue contains Queue in, Queue out, and Waiting calls."/>
+                        <TextBlock Text="Tools contains Voicemail, Messages, Record, Recordings, People, and Pair this phone. Pair this phone opens a normal dialog with a copyable pairing code, pairing link, examples, and a button to check that the code is still valid."/>
+                        <TextBlock Text="Pairing codes link another trusted device to the same extension. Linked devices should be able to ring together by server policy, and Flex PBX can hold a caller while you transfer the call to another linked device."/>
+                        <TextBlock Text="Help contains Getting started and Manual. The first time the app opens, Flex Phone shows getting started automatically."/>
+                        <TextBlock Text="The tray icon can reopen Flex Phone or exit it. If minimize to tray is on, closing or minimizing the window keeps the phone available for calls and notifications."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Settings and Updates" AutomationProperties.Name="Settings and Updates">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Settings and updates"/>
+                        <TextBlock Text="Settings opens tabs for connection, calling, updates, accessibility, and advanced options."/>
+                        <TextBlock Text="Connection controls the default Flex PBX server and TURN server. Calling controls sounds, auto-answer, intercom, and local SIP port. Accessibility controls line announcements, queue duration announcements, call-ended alerts, table/list detail, sound alerts, and shortcut hints."/>
+                        <TextBlock Text="Updates checks the Flex Phone update manifest from your Flex PBX server, downloads the installer to the app data updates folder, verifies the checksum, closes Flex Phone, runs the installer, relaunches, and announces success."/>
+                        <TextBlock Text="Remember sign-in keeps your extension details protected by Windows for this Windows account. Use File, Forget remembered sign-in if you no longer want Flex Phone to sign in automatically."/>
+                        <TextBlock Text="Minimize to tray keeps Flex Phone running after you close or minimize the window, so calls and notifications can still reach you."/>
+                        <TextBlock Text="The installer creates a Windows Defender Firewall rule for Flex Phone on Domain and Private networks only. This prevents repeated Windows network security prompts after updates while keeping Public networks closed."/>
+                        <TextBlock Text="The update manifest includes version, installer URL, download URL, file name, release notes, and checksum. If the checksum does not match, Flex Phone keeps the current installed version."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Accessibility" AutomationProperties.Name="Accessibility">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Accessibility"/>
+                        <TextBlock Text="Flex Phone uses native Windows controls and UI Automation names so screen readers hear useful labels instead of raw program object names."/>
+                        <TextBlock Text="The line list announces readable states such as Line 1, free, Line 2, ringing from caller, or Line 3, call with Matthew, on hold."/>
+                        <TextBlock Text="Buttons use short names such as Dial, Hold, Transfer, End, Mute, Unmute, Queue in, and Queue out."/>
+                        <TextBlock Text="Live announcements report line changes, queue duration, call-ended alerts, registration, update status, and important errors. These can be adjusted in Settings, Accessibility."/>
+                        <TextBlock Text="Sound alerts can play for ringing, quick alerts, registration, and network status. They can be turned off in Settings, Calling."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Troubleshooting" AutomationProperties.Name="Troubleshooting">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HeadingText}" Text="Troubleshooting"/>
+                        <TextBlock Text="If sign in fails, check the server name, your email address, and the authorization link. Use the existing-extension section only when you already have login details or another provider login."/>
+                        <TextBlock Text="If calls do not connect, check that Flex PBX is reachable, your extension is registered, and your network allows SIP and media traffic. If you are behind a strict network, ask your administrator whether TURN or tailnet access is required."/>
+                        <TextBlock Text="If Windows asks for network permission after an older update, install the newest Flex Phone build so the installer can refresh the trusted-network firewall rule. If Windows asks for administrator permission during install or update, choose Yes so the firewall and Program Files updates can be applied."/>
+                        <TextBlock Text="If messages fail, the extension or number may not have SMS enabled, the provider may not support messaging for that number, or Flex PBX may need the provider route checked."/>
+                        <TextBlock Text="If screen reader output is too detailed or too quiet, open Settings, then Accessibility, and adjust announcements and shortcut hints."/>
+                        <TextBlock Text="If an update fails or is canceled, the current installed Flex Phone stays in place. Try checking for updates again after confirming the server and internet connection are working."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

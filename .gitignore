@@ -8,6 +8,10 @@ yarn-error.log*
 dist/
 build/
 out/
+**/bin/
+**/obj/
+**/publish/
+**/dist/
 
 # OS generated files
 .DS_Store
@@ -85,6 +89,10 @@ backups/
 logs/
 temp/
 tmp/
+
+# Flex Phone native release outputs
+/clients/windows/native/artifacts/*
+!/clients/windows/native/artifacts/flexphone-update.json
 
 # macOS
 *.app

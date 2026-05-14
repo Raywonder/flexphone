@@ -1,10 +1,24 @@
-# FlexPhone
+# Flex Phone
 
-**Standalone SIP Client with FlexPBX Integration**
+**Standalone SIP client with Flex PBX integration**
 
 ## Overview
 
-FlexPhone is a lightweight, cross-platform SIP client designed to work seamlessly with FlexPBX systems while maintaining compatibility with third-party SIP providers.
+Flex Phone is a lightweight, cross-platform SIP client designed to work seamlessly with Flex PBX systems while maintaining compatibility with third-party SIP providers.
+
+## Repository Layout
+
+```text
+clients/
+|-- windows/native/   # Native Windows WPF Flex Phone client
+|-- macos/native/     # Native macOS Swift/AppKit or SwiftUI client
+|-- ios/react-native/ # Existing iOS React Native work for review/reuse
+|-- ios/pwa/          # Existing iOS/PWA install surface for review/reuse
+`-- shared/assets/    # Reusable sounds and media assets
+legacy/electron/      # Older Electron-era app and deployment modules for review
+```
+
+Keep platform-specific native UI code in `clients/<platform>/native`. Flex PBX server code belongs in the `flexpbx` repository, and VoiceLink chat/rooms code belongs in the `voicelink` repository.
 
 ## Key Features
 
@@ -48,25 +62,29 @@ FlexPhone is a lightweight, cross-platform SIP client designed to work seamlessl
 git clone https://github.com/Raywonder/flexphone.git
 cd flexphone
 
-# Install dependencies
-npm install
+# Install legacy Electron dependencies
+npm install --prefix legacy/electron
 
-# Start development
-npm run dev
+# Start legacy Electron development
+npm run legacy:electron:dev
 ```
 
 ### Building
 
 ```bash
-# Desktop applications
-npm run build-mac     # macOS
-npm run build-win     # Windows
-npm run build-linux   # Linux
+# Native Windows application
+cd clients/windows/native
+powershell -ExecutionPolicy Bypass -File .\build.ps1 -Clean -Publish -Version 1.0.4 -Build 75
 
-# Mobile applications
-npm run build-ios     # iOS
-npm run build-android # Android
+# Workspace build helpers
+npm run build:windows
+npm run build:windows:installer
+
+# Legacy Electron app, for review or reuse
+npm run legacy:electron:build
 ```
+
+Root `npm` scripts are only orchestration helpers. Electron-era dependencies and package metadata live under `legacy/electron`.
 
 ## Configuration
 
@@ -104,14 +122,15 @@ FlexPhone uses a modular architecture:
 ## Development
 
 ### Project Structure
-```
-src/
-├── main/           # Electron main process
-├── renderer/       # Desktop UI
-├── mobile/         # React Native components
-├── services/       # SIP and communication services
-├── components/     # Shared UI components
-└── utils/          # Helper functions
+```text
+clients/
+|-- windows/native/
+|-- macos/native/
+|-- ios/react-native/
+|-- ios/pwa/
+`-- shared/assets/
+legacy/
+`-- electron/
 ```
 
 ### Contributing
@@ -132,11 +151,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Issues**: [GitHub Issues](https://github.com/Raywonder/flexphone/issues)
 - **Community**: [FlexPBX Discord](https://discord.gg/flexpbx)
 
-## Relationship to FlexPBX
+## Relationship to Flex PBX
 
-While FlexPhone is a standalone application that works with any SIP provider, it offers enhanced functionality when paired with FlexPBX systems:
+While Flex Phone is a standalone application that works with any SIP provider, it offers enhanced functionality when paired with Flex PBX systems:
 
 - **Standalone**: Basic SIP calling, standard features
-- **FlexPBX Enhanced**: Advanced PBX features, unified communications, enterprise tools
+- **Flex PBX Enhanced**: Advanced PBX features, unified communications, enterprise tools
 
 Choose the deployment that best fits your needs!

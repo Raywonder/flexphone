@@ -1,0 +1,347 @@
+<Window x:Class="FlexPhone.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Flex Phone" Height="720" Width="760"
+        MinHeight="620" MinWidth="560"
+        WindowStartupLocation="CenterScreen"
+        Background="#101418" Foreground="#f7f7f7"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        AutomationProperties.Name="Flex Phone softphone">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Padding" Value="12,6"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Margin" Value="0,4,0,10"/>
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Margin" Value="0,4,0,10"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,14">
+            <TextBlock DockPanel.Dock="Left" Text="Flex Phone" FontSize="24" FontWeight="SemiBold"/>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Menu x:Name="MainMenu" Background="Transparent" Foreground="#f7f7f7"
+                      IsMainMenu="True"
+                      Focusable="False"
+                      IsTabStop="False"
+                      KeyboardNavigation.TabNavigation="None"
+                      KeyboardNavigation.ControlTabNavigation="None"
+                      KeyboardNavigation.DirectionalNavigation="None"
+                      AutomationProperties.Name="Flex Phone menu">
+                    <MenuItem Header="_File" AutomationProperties.Name="File">
+                        <MenuItem Header="_Settings" Click="SettingsButton_Click"
+                                  AutomationProperties.Name="Settings"/>
+                        <MenuItem x:Name="InstallFullVersionMenuItem" Header="_Install full version" Click="InstallFullVersionMenuItem_Click"
+                                  AutomationProperties.Name="Install full version"/>
+                        <Separator/>
+                        <MenuItem Header="_Log out" Click="UnregisterButton_Click"
+                                  AutomationProperties.Name="Log out"/>
+                        <MenuItem Header="_Forget remembered sign-in" Click="ForgetRememberedSignInMenuItem_Click"
+                                  AutomationProperties.Name="Forget remembered sign-in"/>
+                        <MenuItem Header="E_xit" Click="ExitMenuItem_Click"
+                                  AutomationProperties.Name="Exit"/>
+                    </MenuItem>
+                    <MenuItem Header="_Call" AutomationProperties.Name="Call">
+                        <MenuItem Header="_Dial" InputGestureText="Enter" Click="DialButton_Click"
+                                  AutomationProperties.Name="Dial"/>
+                        <MenuItem Header="_Pick up" Click="AnswerButton_Click"
+                                  AutomationProperties.Name="Pick up"/>
+                        <MenuItem Header="_End" InputGestureText="Esc, Esc" Click="HangupButton_Click"
+                                  AutomationProperties.Name="End"/>
+                        <Separator/>
+                        <MenuItem Header="_Hold" Click="HoldButton_Click"
+                                  AutomationProperties.Name="Hold"/>
+                        <MenuItem Header="_Resume" Click="ResumeButton_Click"
+                                  AutomationProperties.Name="Resume"/>
+                        <MenuItem Header="_Transfer" Click="TransferButton_Click"
+                                  AutomationProperties.Name="Transfer"/>
+                        <Separator/>
+                        <MenuItem Header="_Mute" Click="MuteButton_Click"
+                                  AutomationProperties.Name="Mute"/>
+                        <MenuItem Header="_Unmute" Click="UnmuteButton_Click"
+                                  AutomationProperties.Name="Unmute"/>
+                        <MenuItem Header="_Intercom" Click="IntercomButton_Click"
+                                  AutomationProperties.Name="Intercom"/>
+                        <MenuItem Header="Call _screening toggle" InputGestureText="Ctrl+9" Click="CallScreeningMenuItem_Click"
+                                  AutomationProperties.Name="Call screening toggle"/>
+                    </MenuItem>
+                    <MenuItem Header="_Lines" AutomationProperties.Name="Lines">
+                        <MenuItem Header="Line _1" InputGestureText="Ctrl+1" Click="LineMenuItem_Click" Tag="1" AutomationProperties.Name="Line 1"/>
+                        <MenuItem Header="Line _2" InputGestureText="Ctrl+2" Click="LineMenuItem_Click" Tag="2" AutomationProperties.Name="Line 2"/>
+                        <MenuItem Header="Line _3" InputGestureText="Ctrl+3" Click="LineMenuItem_Click" Tag="3" AutomationProperties.Name="Line 3"/>
+                        <MenuItem Header="Line _4" InputGestureText="Ctrl+4" Click="LineMenuItem_Click" Tag="4" AutomationProperties.Name="Line 4"/>
+                        <MenuItem Header="Line _5" InputGestureText="Ctrl+5" Click="LineMenuItem_Click" Tag="5" AutomationProperties.Name="Line 5"/>
+                        <MenuItem Header="Line _6" InputGestureText="Ctrl+6" Click="LineMenuItem_Click" Tag="6" AutomationProperties.Name="Line 6"/>
+                        <MenuItem Header="Line _7" InputGestureText="Ctrl+7" Click="LineMenuItem_Click" Tag="7" AutomationProperties.Name="Line 7"/>
+                        <MenuItem Header="Line _8" InputGestureText="Ctrl+8" Click="LineMenuItem_Click" Tag="8" AutomationProperties.Name="Line 8"/>
+                    </MenuItem>
+                    <MenuItem Header="_Queue" AutomationProperties.Name="Queue">
+                        <MenuItem Header="_Toggle queue" Click="QueueToggleButton_Click"
+                                  AutomationProperties.Name="Toggle queue"/>
+                        <MenuItem Header="_Waiting calls" Click="WaitingCallButton_Click"
+                                  AutomationProperties.Name="Waiting calls"/>
+                    </MenuItem>
+                    <MenuItem Header="_Tools" AutomationProperties.Name="Tools">
+                        <MenuItem Header="_Voicemail" Click="VoicemailButton_Click"
+                                  AutomationProperties.Name="Voicemail"/>
+                        <MenuItem Header="_Messages" Click="MessagesButton_Click"
+                                  AutomationProperties.Name="Messages"/>
+                        <MenuItem Header="_Record" Click="RecordButton_Click"
+                                  AutomationProperties.Name="Record"/>
+                        <MenuItem Header="Reco_rdings" Click="RecordingsButton_Click"
+                                  AutomationProperties.Name="Recordings"/>
+                        <MenuItem Header="_People" Click="PeopleButton_Click"
+                                  AutomationProperties.Name="People"/>
+                        <MenuItem Header="_Directory" Click="DirectoryButton_Click"
+                                  AutomationProperties.Name="Directory"/>
+                        <MenuItem Header="_Pair this phone" Click="PairButton_Click"
+                                  AutomationProperties.Name="Pair this phone"/>
+                    </MenuItem>
+                    <MenuItem Header="_Help" AutomationProperties.Name="Help">
+                        <MenuItem Header="_Getting started" Click="GettingStartedMenuItem_Click"
+                                  AutomationProperties.Name="Getting started"/>
+                        <MenuItem Header="_Manual" Click="ManualMenuItem_Click"
+                                  AutomationProperties.Name="Manual"/>
+                    </MenuItem>
+                </Menu>
+                <TextBlock x:Name="StatusText" Text="Not registered" VerticalAlignment="Center" Margin="0,0,12,0"
+                           AutomationProperties.Name="Flex Phone registration status"
+                           AutomationProperties.LiveSetting="Off"/>
+                <Button x:Name="SettingsButton" Content="Settings" Click="SettingsButton_Click"
+                        Visibility="Collapsed"
+                        Focusable="False"
+                        IsTabStop="False"
+                        AutomationProperties.Name="Open Flex Phone settings"/>
+            </StackPanel>
+            <TextBlock x:Name="AnnouncementText"
+                       Width="1" Height="1" Opacity="0"
+                       IsHitTestVisible="False"
+                       AutomationProperties.Name="Flex Phone status announcement"
+                       AutomationProperties.LiveSetting="Assertive"/>
+        </DockPanel>
+
+        <Grid x:Name="LoginPanel" Grid.Row="1" MaxWidth="460" HorizontalAlignment="Center" VerticalAlignment="Center"
+              KeyboardNavigation.TabNavigation="Cycle"
+              KeyboardNavigation.ControlTabNavigation="Cycle"
+              AutomationProperties.Name="Flex Phone login">
+            <StackPanel>
+                <TextBlock Text="Flex PBX server"/>
+                <TextBox x:Name="ServerBox" Text="pbx.devinecreations.net"
+                         AutomationProperties.Name="Flex PBX server domain"
+                         AutomationProperties.HelpText="Enter the hosted or local Flex PBX server domain."/>
+
+                <StackPanel x:Name="LoginChoicePanel"
+                            AutomationProperties.Name="Choose how to start">
+                    <Button x:Name="ShowRequestExtensionButton" Content="Get extension" Click="ShowRequestExtensionButton_Click"
+                            AutomationProperties.Name="Get extension"/>
+                    <Button x:Name="ShowExistingSignInButton" Content="Sign in" Click="ShowExistingSignInButton_Click"
+                            AutomationProperties.Name="Sign in"/>
+                </StackPanel>
+
+                <StackPanel x:Name="RequestExtensionPanel" Visibility="Collapsed"
+                            AutomationProperties.Name="Get extension">
+                    <TextBlock Text="Email address"/>
+                    <TextBox x:Name="EmailBox"
+                             AutomationProperties.Name="Email address"
+                             AutomationProperties.HelpText="Enter the email address that Flex PBX should link to this device."/>
+
+                    <CheckBox x:Name="RememberProvisioningCheckBox" Content="Remember this sign-in" IsChecked="True" Margin="0,0,0,10"
+                              AutomationProperties.Name="Remember this sign-in"
+                              AutomationProperties.HelpText="Flex Phone will keep this device signed in for you on this Windows account."/>
+
+                    <Button x:Name="RequestExtensionButton" Content="Continue" Click="RequestExtensionButton_Click"
+                            AutomationProperties.Name="Continue"/>
+
+                    <TextBlock Text="Device authorization link"/>
+                    <TextBox x:Name="TokenUrlBox" IsReadOnly="True" TextWrapping="Wrap"
+                             AutomationProperties.Name="Device authorization link"
+                             AutomationProperties.HelpText="Open this link to authorize this device with Flex PBX."/>
+
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button x:Name="OpenTokenUrlButton" Content="Open authorization" Click="OpenTokenUrlButton_Click"
+                                AutomationProperties.Name="Open authorization"/>
+                        <Button x:Name="FinishAuthorizationButton" Content="Finish sign in" Click="FinishAuthorizationButton_Click"
+                                AutomationProperties.Name="Finish sign in"/>
+                        <Button Content="Back" Click="ShowLoginChoiceButton_Click"
+                                AutomationProperties.Name="Back"/>
+                    </WrapPanel>
+                </StackPanel>
+
+                <StackPanel x:Name="ExistingSignInPanel" Visibility="Collapsed"
+                            AutomationProperties.Name="Sign in">
+                    <TextBlock Text="Extension, username, email, or provider login"/>
+                    <TextBox x:Name="ExtensionBox"
+                             AutomationProperties.Name="Extension, username, email, or provider login"/>
+
+                    <TextBlock Text="Password or provider code"/>
+                    <PasswordBox x:Name="PasswordBox"
+                                 AutomationProperties.Name="Password or provider code"/>
+
+                    <CheckBox x:Name="RememberExistingSignInCheckBox" Content="Remember this sign-in" IsChecked="True" Margin="0,0,0,10"
+                              AutomationProperties.Name="Remember this sign-in"
+                              AutomationProperties.HelpText="Flex Phone will keep this device signed in for you on this Windows account."/>
+
+                    <Button x:Name="RegisterButton" Content="Sign in" Click="RegisterButton_Click"
+                            AutomationProperties.Name="Sign in"/>
+
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="Reset username" Click="ResetUsernameButton_Click"
+                                AutomationProperties.Name="Email Flex PBX username for this extension"/>
+                        <Button Content="Reset password" Click="ResetPasswordButton_Click"
+                                AutomationProperties.Name="Reset Flex PBX password for this extension"/>
+                        <Button Content="Get password" Click="GetPasswordButton_Click"
+                                AutomationProperties.Name="Request current Flex PBX password for this extension"/>
+                        <Button Content="Back" Click="ShowLoginChoiceButton_Click"
+                                AutomationProperties.Name="Back"/>
+                    </WrapPanel>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <Grid x:Name="PhonePanel" Grid.Row="1" Visibility="Collapsed"
+              KeyboardNavigation.TabNavigation="Cycle"
+              KeyboardNavigation.ControlTabNavigation="Cycle"
+              AutomationProperties.Name="Flex Phone dialer">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Margin="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                <TextBlock x:Name="AccountLabel" Text="Account"/>
+                <ComboBox x:Name="AccountsListBox"
+                              SelectionChanged="AccountsListBox_SelectionChanged"
+                              TextSearch.TextPath="DisplayName"
+                              AutomationProperties.LabeledBy="{Binding ElementName=AccountLabel}"
+                              AutomationProperties.Name="Account"
+                              AutomationProperties.HelpText="Choose the Flex Phone account to use.">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                    <TextBlock Text="Number, extension, or SIP address" Margin="0,12,0,0"/>
+                    <TextBox x:Name="DestinationBox" Text="2000"
+                             AutomationProperties.Name="Number, extension, or SIP address to dial"/>
+
+                    <TextBlock Text="Transfer to" x:Name="TransferLabel"/>
+                    <TextBox x:Name="TransferDestinationBox"
+                             AutomationProperties.Name="Transfer destination"/>
+                </StackPanel>
+
+                <UniformGrid x:Name="DtmfKeypad" Grid.Row="1" Columns="3" Margin="0,10,0,14"
+                             Focusable="True"
+                             KeyboardNavigation.TabNavigation="None"
+                             KeyboardNavigation.ControlTabNavigation="None"
+                             GotKeyboardFocus="DtmfKeypad_GotKeyboardFocus"
+                             PreviewKeyDown="DtmfKeypad_PreviewKeyDown"
+                             AutomationProperties.Name="Keypad. Use arrow keys to choose a number and Enter to press it.">
+                    <Button Content="1" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="1"/>
+                    <Button Content="2" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="2"/>
+                    <Button Content="3" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="3"/>
+                    <Button Content="4" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="4"/>
+                    <Button Content="5" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="5"/>
+                    <Button Content="6" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="6"/>
+                    <Button Content="7" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="7"/>
+                    <Button Content="8" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="8"/>
+                    <Button Content="9" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="9"/>
+                    <Button Content="*" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="*"/>
+                    <Button Content="0" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="0"/>
+                    <Button Content="#" Click="DtmfButton_Click" IsTabStop="False" AutomationProperties.Name="#"/>
+                </UniformGrid>
+
+                <GroupBox Grid.Row="2" Header="Lines">
+                    <ListBox x:Name="LinesList"
+                             SelectionChanged="LinesList_SelectionChanged"
+                             AutomationProperties.Name="PBX lines"
+                             AutomationProperties.HelpText="Use Control plus 1 through 8 to choose a line. Enter starts a call. Escape twice ends the active call.">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4">
+                                    <TextBlock Text="{Binding DisplayText}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding DetailText}" Foreground="#b8c1cc"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </GroupBox>
+            </Grid>
+
+            <StackPanel Grid.Column="1">
+                <WrapPanel>
+                    <Button x:Name="DialButton" Content="Dial" Click="DialButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Dial"/>
+                    <Button x:Name="AnswerButton" Content="Pick up" Click="AnswerButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Pick up"/>
+                    <Button x:Name="WaitingCallButton" Content="Waiting callers" Click="WaitingCallButton_Click" MinWidth="128"
+                            AutomationProperties.Name="Currently waiting callers"/>
+                    <Button x:Name="HangupButton" Content="End" Click="HangupButton_Click" MinWidth="92"
+                            AutomationProperties.Name="End"/>
+                    <Button x:Name="HoldButton" Content="Hold" Click="HoldButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Hold"/>
+                    <Button x:Name="ResumeButton" Content="Resume" Click="ResumeButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Resume"/>
+                    <Button x:Name="TransferButton" Content="Transfer" Click="TransferButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Transfer"/>
+                    <Button x:Name="MuteButton" Content="Mute" Click="MuteButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Mute"/>
+                    <Button x:Name="UnmuteButton" Content="Unmute" Click="UnmuteButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Unmute"/>
+                    <Button x:Name="IntercomButton" Content="Intercom" Click="IntercomButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Intercom"/>
+                    <Button x:Name="VoicemailButton" Content="Voicemail" Click="VoicemailButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Voicemail"/>
+                    <Button x:Name="MessagesButton" Content="Messages" Click="MessagesButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Messages"/>
+                    <Button x:Name="RecordButton" Content="Record" Click="RecordButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Record"/>
+                    <Button x:Name="RecordingsButton" Content="Recordings" Click="RecordingsButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Recordings"/>
+                    <Button x:Name="PeopleButton" Content="People" Click="PeopleButton_Click" MinWidth="92"
+                            AutomationProperties.Name="People"/>
+                    <Button x:Name="DirectoryButton" Content="Directory" Click="DirectoryButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Directory"/>
+                    <Button x:Name="PairButton" Content="Pair" Click="PairButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Pair"/>
+                    <Button x:Name="QueueToggleButton" Content="Queue out" Click="QueueToggleButton_Click"
+                            GotKeyboardFocus="QueueToggleButton_GotKeyboardFocus" MinWidth="104"
+                            AutomationProperties.Name="Queue toggle"/>
+                    <Button x:Name="DndButton" Content="DND off" Click="DndButton_Click" MinWidth="92"
+                            AutomationProperties.Name="DND"/>
+                    <Button x:Name="UnregisterButton" Content="Log out" Click="UnregisterButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Log out"/>
+                </WrapPanel>
+
+                <GroupBox Header="Call log" Margin="0,10,0,0">
+                    <ListBox x:Name="CallLogList" MinHeight="360"
+                             AutomationProperties.Name="Call log"/>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Grid.Row="2" Margin="0,12,0,0" Foreground="#b8c1cc"
+                   Text=""/>
+    </Grid>
+</Window>
