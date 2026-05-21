@@ -275,6 +275,7 @@ namespace FlexPhone.Services
                 client = "Flex Phone",
                 app_version = GetCurrentVersion(),
                 requested_auth = "device_token",
+                confirmation_required = true,
                 roles_supported = new[] { "head_admin", "admin", "team_manager", "agent", "user" }
             });
 
@@ -293,7 +294,8 @@ namespace FlexPhone.Services
                 device_id = deviceId,
                 token_url = tokenUrl.Trim(),
                 client = "Flex Phone",
-                app_version = GetCurrentVersion()
+                app_version = GetCurrentVersion(),
+                confirmation_required = true
             });
 
             var result = await PostFlexPhoneProvisionAsync(server, payload);
@@ -434,14 +436,40 @@ namespace FlexPhone.Services
 
         public async Task<FlexPhoneUpdateManifest?> GetUpdateManifestAsync(string server, string manifestPath)
         {
-            var uri = Uri.TryCreate(manifestPath, UriKind.Absolute, out var absolute)
-                ? absolute
-                : new Uri(NormalizeHttpsBase(server), NormalizePath(manifestPath));
+            var candidates = new List<Uri>();
+            if (Uri.TryCreate(manifestPath, UriKind.Absolute, out var absolute))
+            {
+                candidates.Add(absolute);
+            }
+            else
+            {
+                var path = NormalizePath(manifestPath);
+                candidates.Add(new Uri(NormalizeHttpsBase(server), path));
+                candidates.Add(new Uri(new Uri("https://devinecreations.net"), path));
+            }
 
-            await using var stream = await _httpClient.GetStreamAsync(uri);
-            return await JsonSerializer.DeserializeAsync<FlexPhoneUpdateManifest>(
-                stream,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            Exception? lastError = null;
+            foreach (var uri in candidates.DistinctBy(item => item.ToString()))
+            {
+                try
+                {
+                    await using var stream = await _httpClient.GetStreamAsync(uri);
+                    return await JsonSerializer.DeserializeAsync<FlexPhoneUpdateManifest>(
+                        stream,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                }
+            }
+
+            if (lastError is not null)
+            {
+                throw lastError;
+            }
+
+            return null;
         }
 
         public static string GetCurrentVersion()
@@ -514,7 +542,7 @@ namespace FlexPhone.Services
             if (response.StatusCode == HttpStatusCode.NotFound && ShouldTryRecoveryFallback(uri))
             {
                 using var fallbackResponse = await PostJsonAsync(
-                    new Uri("https://flexpbx.devinecreations.net/api/flexphone-account-recovery.php"),
+                    new Uri("https://pbx.tappedin.fm/api/flexphone-account-recovery.php"),
                     payload);
                 return await ReadAccountRecoveryResponseAsync(fallbackResponse);
             }
@@ -540,7 +568,8 @@ namespace FlexPhone.Services
 
         private static bool ShouldTryRecoveryFallback(Uri uri)
         {
-            return uri.Host.Equals("pbx.devinecreations.net", StringComparison.OrdinalIgnoreCase)
+            return uri.Host.Equals("pbx.tappedin.fm", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.Equals("pbx.devinecreations.net", StringComparison.OrdinalIgnoreCase)
                 || uri.Host.Equals("vps1.tappedin.fm", StringComparison.OrdinalIgnoreCase);
         }
 

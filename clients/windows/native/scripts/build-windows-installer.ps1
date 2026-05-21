@@ -1,8 +1,8 @@
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
-    [string]$Version = "1.0.4",
-    [string]$Build = "73",
+    [string]$Version = "1.0.5",
+    [string]$Build = "76",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -60,25 +60,15 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build hides update URLs behind advanced settings, adds provider selection, clarifies new extension provisioning and existing extension sign-in, signs in remembered accounts automatically on launch, uses the configured queue toggle code defaulting to *45, routes Voicemail to the configured voicemail code defaulting to *97, adds Directory with readable people names and quiet 30/60 second background refresh, fixes double-Escape hangup across active lines, stops incoming calls from stealing keyboard focus, adds minimized global call hotkeys, call-safe updates, update postponing, accessible update notes, keypad navigation, People actions, remembered sign-in, SMS/provider messages, and trusted-network firewall setup."
+    release_notes = "Flex Phone $Version.$Build keeps pbx.tappedin.fm as the default server, moves server changes into Advanced settings, adds show password, adds account menu actions for email linking, reset, and login pages, separates account login from SIP registration credentials when Flex PBX provides a SIP password, and refreshes updater metadata for the current installer."
     release_notes_list = @(
-        "Updates wait until calls are over before installing.",
-        "Incoming calls notify without stealing keyboard focus.",
-        "Update URLs and backend paths are hidden behind Advanced server paths with a warning.",
-        "Provider selection supports Flex PBX, Callcentric, or another SIP provider.",
-        "Queue toggle uses the configured queue code, defaulting to *45.",
-        "Voicemail routes to the configured voicemail code, defaulting to *97.",
-        "Directory opens the Flex PBX people directory.",
-        "Directory entries read as name, extension, role, and status instead of raw app type names.",
-        "The Directory refreshes quietly in the background and closes with Escape.",
-        "Remembered accounts sign in automatically when Flex Phone opens.",
-        "Double-Escape hangup now checks active calls across lines.",
-        "Double-Escape minimizes Flex Phone from the main window when no call is active.",
-        "Control+Alt+A answers, Control+Alt+D declines, and Control+Alt+H answers and holds incoming calls while minimized.",
-        "Users can postpone an update for a short time until the postpone limit is reached.",
-        "Update notes and links are shown as list items for screen readers.",
-        "The keypad is one tab stop with arrow-key navigation in a phone layout.",
-        "The People window uses a listbox and context-menu actions."
+        "pbx.tappedin.fm is the normal default server.",
+        "Changing server or provider domain now lives in Advanced settings.",
+        "Existing sign-in includes a show password checkbox.",
+        "The File, Account menu can link an email, reset password, open user login, and show admin login for admin roles.",
+        "Email linking shows the old linked email when known and requires confirmation for the new email.",
+        "Flex Phone uses a returned SIP password for SIP registration when it differs from the account login password.",
+        "Updater metadata points to the current installer and portable build."
     )
     checksum = $installerHash
     checksum_sha256 = $installerHash

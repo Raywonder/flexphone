@@ -42,7 +42,7 @@
                         <TextBlock Style="{StaticResource HeadingText}" Text="Getting started with Flex Phone"/>
                         <TextBlock Text="Flex Phone lets you sign in to a Flex PBX extension, make and receive calls, use call queue features, and manage multiple lines from one accessible Windows app."/>
                         <TextBlock Style="{StaticResource SubHeadingText}" Text="First steps"/>
-                        <TextBlock Text="1. Enter your Flex PBX server. The normal default is pbx.devinecreations.net unless your administrator gives you another address."/>
+                        <TextBlock Text="1. Flex Phone uses pbx.tappedin.fm by default. Change the server only from Advanced settings when joining a different Flex PBX server."/>
                         <TextBlock Text="2. Enter your email address and choose Get extension."/>
                         <TextBlock Text="3. Open the authorization link from Flex PBX, approve this device, then choose Finish sign in."/>
                         <TextBlock Text="4. Leave Remember this sign-in checked if this is your trusted Windows account and you want Flex Phone to sign in automatically next time."/>

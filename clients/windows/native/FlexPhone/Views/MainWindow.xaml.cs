@@ -127,6 +127,7 @@ namespace FlexPhone.Views
 
         private void ShowRequestExtensionButton_Click(object sender, RoutedEventArgs e)
         {
+            UpdateCurrentAccountEmailText();
             ShowLoginView(RequestExtensionPanel);
             EmailBox.Focus();
         }
@@ -240,7 +241,7 @@ namespace FlexPhone.Views
         {
             var server = ServerBox.Text.Trim();
             var identifier = ExtensionBox.Text.Trim();
-            var password = PasswordBox.Password;
+            var password = CurrentPasswordText();
 
             FlexPhoneLoginResponse login;
             try
@@ -262,12 +263,19 @@ namespace FlexPhone.Views
             }
 
             var extension = login.Extension.Trim();
+            var sipPassword = FirstText(login.SipPassword, login.Password, password);
+            if (string.IsNullOrWhiteSpace(sipPassword))
+            {
+                MessageBox.Show("Flex PBX signed in, but did not return extension credentials for SIP registration.", "Flex Phone - Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _sounds.PlayQuickAlert(_settings.PlayCallSounds);
+                return;
+            }
             ApplyFeatureCodes(login.FeatureCodes);
 
             await RegisterAccountAsync(
                 server,
                 extension,
-                password,
+                sipPassword,
                 login,
                 replaceSelected,
                 rememberSignIn: RememberExistingSignInCheckBox.IsChecked == true);
@@ -363,6 +371,7 @@ namespace FlexPhone.Views
                 {
                     SaveRememberedSignIn(account);
                 }
+                UpdateAccountMenuState();
                 _heartbeatTimer.Start();
                 _queueDurationTimer.Start();
                 await ReportDeviceStatusAsync();
@@ -736,6 +745,7 @@ namespace FlexPhone.Views
                 AutomationProperties.SetName(AccountsListBox, $"Account, {account.DisplayName}");
             }
 
+            UpdateAccountMenuState();
             UpdateProvisioningLink();
             RefreshState();
         }
@@ -949,6 +959,30 @@ namespace FlexPhone.Views
             await RequestAccountRecoveryAsync("Get password", "Send the current password for this extension to its recovery email? If it cannot be safely read, a new password will be created and emailed instead.", "get_current_password");
         }
 
+        private void LinkEmailMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedAccount is { } account)
+            {
+                EmailBox.Text = account.Email;
+            }
+
+            UpdateCurrentAccountEmailText();
+            ShowLoginView(RequestExtensionPanel);
+            EmailBox.Focus();
+            Log("Enter the email address to link. Flex PBX will confirm the new email before changing the account.");
+        }
+
+        private void OpenUserLoginMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var extension = SelectedAccount?.Extension ?? ExtensionBox.Text;
+            _pbxClient.OpenInBrowser(_pbxClient.BuildBrowserLoginUri(ServerBox.Text, extension, _settings.BrowserLoginPath));
+        }
+
+        private void OpenAdminLoginMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _pbxClient.OpenInBrowser(_pbxClient.BuildDownloadUri(ServerBox.Text, "/admin/"));
+        }
+
         private async Task RequestAccountRecoveryAsync(string title, string confirmationMessage, string action)
         {
             var extension = ExtensionBox.Text.Trim();
@@ -1018,6 +1052,7 @@ namespace FlexPhone.Views
                 }
                 UpdateProvisioningLink();
                 RefreshState();
+                UpdateAccountMenuState();
             }
         }
 
@@ -1253,7 +1288,58 @@ namespace FlexPhone.Views
             ServerBox.Text = _settings.DefaultPbxServer;
             RememberProvisioningCheckBox.IsChecked = _settings.RememberSignIn;
             RememberExistingSignInCheckBox.IsChecked = _settings.RememberSignIn;
+            UpdateAccountMenuState();
             UpdateProvisioningLink();
+        }
+
+        private string CurrentPasswordText()
+        {
+            return ShowPasswordCheckBox.IsChecked == true
+                ? VisiblePasswordBox.Text
+                : PasswordBox.Password;
+        }
+
+        private void ShowPasswordCheckBox_Changed(object sender, RoutedEventArgs e)
+        {
+            if (ShowPasswordCheckBox.IsChecked == true)
+            {
+                VisiblePasswordBox.Text = PasswordBox.Password;
+                PasswordBox.Visibility = Visibility.Collapsed;
+                VisiblePasswordBox.Visibility = Visibility.Visible;
+                VisiblePasswordBox.Focus();
+                VisiblePasswordBox.CaretIndex = VisiblePasswordBox.Text.Length;
+                return;
+            }
+
+            PasswordBox.Password = VisiblePasswordBox.Text;
+            VisiblePasswordBox.Visibility = Visibility.Collapsed;
+            PasswordBox.Visibility = Visibility.Visible;
+            PasswordBox.Focus();
+        }
+
+        private void UpdateCurrentAccountEmailText()
+        {
+            if (SelectedAccount is { } account && !string.IsNullOrWhiteSpace(account.Email))
+            {
+                CurrentAccountEmailText.Text = $"Current linked email: {account.Email}. A new email must be confirmed before Flex PBX changes the link.";
+                return;
+            }
+
+            CurrentAccountEmailText.Text = "No existing linked email is shown for this account. A new email must be confirmed before Flex PBX links it.";
+        }
+
+        private void UpdateAccountMenuState()
+        {
+            var role = SelectedAccount?.Role ?? "";
+            AdminLoginMenuItem.Visibility = IsAdminRole(role) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static bool IsAdminRole(string role)
+        {
+            return role.Equals("admin", StringComparison.OrdinalIgnoreCase)
+                || role.Equals("super_admin", StringComparison.OrdinalIgnoreCase)
+                || role.Equals("administrator", StringComparison.OrdinalIgnoreCase)
+                || role.Equals("head_admin", StringComparison.OrdinalIgnoreCase);
         }
 
         private string QueueActionCode(bool currentlyLoggedIn)
@@ -1516,7 +1602,6 @@ namespace FlexPhone.Views
 
         private void SaveSettings()
         {
-            _settings.DefaultPbxServer = ServerBox.Text.Trim();
             _settings.RememberSignIn = RememberCurrentLoginChoice;
             _settingsService.Save(_settings);
         }

@@ -22,9 +22,6 @@
                         <ComboBoxItem Content="Callcentric"/>
                         <ComboBoxItem Content="Other SIP provider"/>
                     </ComboBox>
-                    <TextBlock Text="Server or provider domain"/>
-                    <TextBox x:Name="DefaultServerBox" Margin="0,4,0,10"
-                             AutomationProperties.Name="Server or provider domain"/>
                     <TextBlock Text="Local SIP port"/>
                     <TextBox x:Name="LocalPortBox" Margin="0,4,0,10"
                              AutomationProperties.Name="Local SIP port"/>
@@ -107,6 +104,10 @@
 
             <TabItem Header="Advanced">
                 <StackPanel Margin="12">
+                    <TextBlock Text="Server or provider domain"/>
+                    <TextBox x:Name="DefaultServerBox" Margin="0,4,0,10"
+                             AutomationProperties.Name="Server or provider domain"
+                             AutomationProperties.HelpText="Use this only when joining a different Flex PBX server. The normal default is pbx.tappedin.fm."/>
                     <CheckBox x:Name="MinimizeToTrayCheckBox" Content="Minimize to system tray"
                               AutomationProperties.Name="Minimize to system tray"/>
                     <CheckBox x:Name="StartMinimizedCheckBox" Content="Start minimized to tray" Margin="0,8,0,0"

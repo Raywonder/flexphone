@@ -42,6 +42,16 @@
                       KeyboardNavigation.DirectionalNavigation="None"
                       AutomationProperties.Name="Flex Phone menu">
                     <MenuItem Header="_File" AutomationProperties.Name="File">
+                        <MenuItem Header="_Account" AutomationProperties.Name="Account">
+                            <MenuItem Header="_Link email address" Click="LinkEmailMenuItem_Click"
+                                      AutomationProperties.Name="Link email address"/>
+                            <MenuItem Header="_Reset password" Click="ResetPasswordButton_Click"
+                                      AutomationProperties.Name="Reset password"/>
+                            <MenuItem Header="_User login page" Click="OpenUserLoginMenuItem_Click"
+                                      AutomationProperties.Name="User login page"/>
+                            <MenuItem x:Name="AdminLoginMenuItem" Header="_Admin login page" Click="OpenAdminLoginMenuItem_Click"
+                                      AutomationProperties.Name="Admin login page"/>
+                        </MenuItem>
                         <MenuItem Header="_Settings" Click="SettingsButton_Click"
                                   AutomationProperties.Name="Settings"/>
                         <MenuItem x:Name="InstallFullVersionMenuItem" Header="_Install full version" Click="InstallFullVersionMenuItem_Click"
@@ -138,8 +148,9 @@
               KeyboardNavigation.ControlTabNavigation="Cycle"
               AutomationProperties.Name="Flex Phone login">
             <StackPanel>
-                <TextBlock Text="Flex PBX server"/>
-                <TextBox x:Name="ServerBox" Text="pbx.devinecreations.net"
+                <TextBlock x:Name="ServerLabel" Text="Flex PBX server" Visibility="Collapsed"/>
+                <TextBox x:Name="ServerBox" Text="pbx.tappedin.fm"
+                         Visibility="Collapsed"
                          AutomationProperties.Name="Flex PBX server domain"
                          AutomationProperties.HelpText="Enter the hosted or local Flex PBX server domain."/>
 
@@ -153,6 +164,8 @@
 
                 <StackPanel x:Name="RequestExtensionPanel" Visibility="Collapsed"
                             AutomationProperties.Name="Get extension">
+                    <TextBlock x:Name="CurrentAccountEmailText" TextWrapping="Wrap" Margin="0,0,0,10"
+                               AutomationProperties.Name="Current linked email"/>
                     <TextBlock Text="Email address"/>
                     <TextBox x:Name="EmailBox"
                              AutomationProperties.Name="Email address"
@@ -187,8 +200,18 @@
                              AutomationProperties.Name="Extension, username, email, or provider login"/>
 
                     <TextBlock Text="Password or provider code"/>
-                    <PasswordBox x:Name="PasswordBox"
+                    <Grid Margin="0,4,0,10">
+                        <PasswordBox x:Name="PasswordBox"
                                  AutomationProperties.Name="Password or provider code"/>
+                        <TextBox x:Name="VisiblePasswordBox"
+                                 Visibility="Collapsed"
+                                 AutomationProperties.Name="Password or provider code shown"/>
+                    </Grid>
+
+                    <CheckBox x:Name="ShowPasswordCheckBox" Content="Show password" Margin="0,0,0,10"
+                              Checked="ShowPasswordCheckBox_Changed"
+                              Unchecked="ShowPasswordCheckBox_Changed"
+                              AutomationProperties.Name="Show password"/>
 
                     <CheckBox x:Name="RememberExistingSignInCheckBox" Content="Remember this sign-in" IsChecked="True" Margin="0,0,0,10"
                               AutomationProperties.Name="Remember this sign-in"

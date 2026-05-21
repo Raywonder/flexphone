@@ -2,7 +2,7 @@ namespace FlexPhone.Models
 {
     public sealed class FlexPhoneSettings
     {
-        public string DefaultPbxServer { get; set; } = "pbx.devinecreations.net";
+        public string DefaultPbxServer { get; set; } = "pbx.tappedin.fm";
         public string DefaultTurnServer { get; set; } = "turn.tappedin.fm";
         public bool UseCustomTurnServer { get; set; }
         public string CustomTurnServer { get; set; } = "";

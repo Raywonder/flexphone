@@ -49,9 +49,9 @@ namespace FlexPhone.Services
         private static FlexPhoneSettings Normalize(FlexPhoneSettings settings)
         {
             if (string.IsNullOrWhiteSpace(settings.DefaultPbxServer)
-                || settings.DefaultPbxServer.Equals("pbx.tappedin.fm", StringComparison.OrdinalIgnoreCase))
+                || settings.DefaultPbxServer.Equals("pbx.devinecreations.net", StringComparison.OrdinalIgnoreCase))
             {
-                settings.DefaultPbxServer = "pbx.devinecreations.net";
+                settings.DefaultPbxServer = "pbx.tappedin.fm";
             }
 
             if (string.IsNullOrWhiteSpace(settings.DefaultTurnServer))
