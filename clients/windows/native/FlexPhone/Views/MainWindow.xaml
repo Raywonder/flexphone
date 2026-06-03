@@ -21,6 +21,10 @@
             <Setter Property="MinHeight" Value="32"/>
             <Setter Property="Margin" Value="0,4,0,10"/>
         </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Margin" Value="0,4,0,10"/>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="18">
@@ -125,6 +129,12 @@
                                   AutomationProperties.Name="Getting started"/>
                         <MenuItem Header="_Manual" Click="ManualMenuItem_Click"
                                   AutomationProperties.Name="Manual"/>
+                        <Separator/>
+                        <MenuItem Header="Check for _updates now" Click="CheckForUpdatesMenuItem_Click"
+                                  AutomationProperties.Name="Check for updates now"/>
+                        <MenuItem x:Name="AutoCheckUpdatesMenuItem" Header="Check for updates _automatically"
+                                  IsCheckable="True" Click="AutoCheckUpdatesMenuItem_Click"
+                                  AutomationProperties.Name="Check for updates automatically"/>
                     </MenuItem>
                 </Menu>
                 <TextBlock x:Name="StatusText" Text="Not registered" VerticalAlignment="Center" Margin="0,0,12,0"
@@ -145,10 +155,18 @@
 
         <Grid x:Name="LoginPanel" Grid.Row="1" MaxWidth="460" HorizontalAlignment="Center" VerticalAlignment="Center"
               KeyboardNavigation.TabNavigation="Cycle"
-              KeyboardNavigation.ControlTabNavigation="Cycle"
-              AutomationProperties.Name="Flex Phone login">
+            KeyboardNavigation.ControlTabNavigation="Cycle"
+            AutomationProperties.Name="Flex Phone login">
             <StackPanel>
-                <TextBlock x:Name="ServerLabel" Text="Flex PBX server" Visibility="Collapsed"/>
+                <TextBlock Text="PBX domain"/>
+                <ComboBox x:Name="ServerPresetComboBox"
+                          SelectionChanged="ServerPresetComboBox_SelectionChanged"
+                          AutomationProperties.Name="PBX domain">
+                    <ComboBoxItem Content="TappedIn Flex PBX" Tag="pbx.tappedin.fm"/>
+                    <ComboBoxItem Content="DevineCreations Flex PBX" Tag="pbx.devinecreations.net"/>
+                    <ComboBoxItem Content="Manual" Tag=""/>
+                </ComboBox>
+                <TextBlock x:Name="ServerLabel" Text="Manual PBX domain" Visibility="Collapsed"/>
                 <TextBox x:Name="ServerBox" Text="pbx.tappedin.fm"
                          Visibility="Collapsed"
                          AutomationProperties.Name="Flex PBX server domain"
@@ -217,7 +235,7 @@
                               AutomationProperties.Name="Remember this sign-in"
                               AutomationProperties.HelpText="Flex Phone will keep this device signed in for you on this Windows account."/>
 
-                    <Button x:Name="RegisterButton" Content="Sign in" Click="RegisterButton_Click"
+                    <Button x:Name="RegisterButton" Content="Sign in" Click="RegisterButton_Click" IsDefault="True"
                             AutomationProperties.Name="Sign in"/>
 
                     <WrapPanel Margin="0,6,0,0">

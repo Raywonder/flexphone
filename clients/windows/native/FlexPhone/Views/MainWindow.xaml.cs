@@ -29,6 +29,7 @@ namespace FlexPhone.Views
         private readonly FlexPhoneCredentialStore _credentialStore = new();
         private readonly FlexPbxClient _pbxClient = new();
         private readonly FlexPhoneSoundService _sounds = new();
+        private readonly ScreenReaderAnnouncementService _announcements = new();
         private readonly NotifyIcon _trayIcon;
         private readonly DispatcherTimer _heartbeatTimer = new() { Interval = TimeSpan.FromSeconds(30) };
         private readonly DispatcherTimer _queueDurationTimer = new() { Interval = TimeSpan.FromMinutes(1) };
@@ -43,6 +44,8 @@ namespace FlexPhone.Views
         private string _pendingAuthorizationUrl = "";
         private DateTime _lastEscapeAt = DateTime.MinValue;
         private const int MaxUpdatePostpones = 3;
+        private const string TappedInPbxServer = "pbx.tappedin.fm";
+        private const string DevineCreationsPbxServer = "pbx.devinecreations.net";
         private const int HotKeyAnswer = 0x4650;
         private const int HotKeyDecline = 0x4651;
         private const int HotKeyHold = 0x4652;
@@ -192,7 +195,7 @@ namespace FlexPhone.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Flex Phone - Get extension", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(FriendlyNetworkError(ex, ServerBox.Text), "Flex Phone - Get extension", MessageBoxButton.OK, MessageBoxImage.Warning);
                 _sounds.PlayQuickAlert(_settings.PlayCallSounds);
             }
         }
@@ -232,7 +235,7 @@ namespace FlexPhone.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Flex Phone - Finish sign in", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(FriendlyNetworkError(ex, ServerBox.Text), "Flex Phone - Finish sign in", MessageBoxButton.OK, MessageBoxImage.Warning);
                 _sounds.PlayQuickAlert(_settings.PlayCallSounds);
             }
         }
@@ -244,14 +247,20 @@ namespace FlexPhone.Views
             var password = CurrentPasswordText();
 
             FlexPhoneLoginResponse login;
+            RegisterButton.IsEnabled = false;
             try
             {
+                Log("Signing in to Flex PBX.");
                 login = await _pbxClient.LoginAsync(server, identifier, password);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Flex Phone - Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(FriendlyNetworkError(ex, server), "Flex Phone - Login", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
+            }
+            finally
+            {
+                RegisterButton.IsEnabled = true;
             }
 
             if (!login.Success || string.IsNullOrWhiteSpace(login.Extension))
@@ -272,8 +281,11 @@ namespace FlexPhone.Views
             }
             ApplyFeatureCodes(login.FeatureCodes);
 
+            var sipServer = FirstText(login.SipSettings.Server, server);
+            Log($"Signed in as extension {extension}. Registering phone audio.");
             await RegisterAccountAsync(
                 server,
+                sipServer,
                 extension,
                 sipPassword,
                 login,
@@ -283,6 +295,7 @@ namespace FlexPhone.Views
 
         private async Task RegisterAccountAsync(
             string server,
+            string sipServer,
             string extension,
             string password,
             FlexPhoneLoginResponse login,
@@ -303,6 +316,7 @@ namespace FlexPhone.Views
             var account = new PbxAccountSession
             {
                 Server = server,
+                SipServer = sipServer,
                 Username = login.Username,
                 Extension = extension,
                 Password = password,
@@ -357,7 +371,15 @@ namespace FlexPhone.Views
 
             _accounts.Add(account);
             AccountsListBox.SelectedItem = account;
-            await RunActionAsync("Login", () => softphone.RegisterAsync(server, extension, password, localPort), softphone);
+            var registered = await RunActionAsync("Register phone", () => softphone.RegisterAsync(sipServer, extension, password, localPort), softphone);
+            if (!registered || !softphone.IsRegistered)
+            {
+                _accounts.Remove(account);
+                softphone.Dispose();
+                RefreshState();
+                return;
+            }
+
             if (softphone.IsRegistered)
             {
                 PasswordBox.Password = "";
@@ -397,6 +419,7 @@ namespace FlexPhone.Views
             ApplyFeatureCodes(result.FeatureCodes);
             await RegisterAccountAsync(
                 ServerBox.Text.Trim(),
+                FirstText(result.SipSettings.Server, ServerBox.Text.Trim()),
                 result.Extension.Trim(),
                 password,
                 result,
@@ -741,6 +764,7 @@ namespace FlexPhone.Views
             if (SelectedAccount is { } account)
             {
                 ServerBox.Text = account.Server;
+                SelectServerPreset(account.Server);
                 ExtensionBox.Text = account.Extension;
                 AutomationProperties.SetName(AccountsListBox, $"Account, {account.DisplayName}");
             }
@@ -1022,9 +1046,10 @@ namespace FlexPhone.Views
             }
             catch (Exception ex)
             {
-                Log($"{title} failed: {ex.Message}");
+                var message = FriendlyNetworkError(ex, ServerBox.Text);
+                Log($"{title} failed: {message}");
                 _sounds.PlayQuickAlert(_settings.PlayCallSounds);
-                MessageBox.Show(ex.Message, $"Flex Phone - {title}", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(message, $"Flex Phone - {title}", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -1092,8 +1117,9 @@ namespace FlexPhone.Views
             }
             catch (Exception ex)
             {
-                Log($"Full install failed: {ex.Message}");
-                MessageBox.Show(ex.Message, "Flex Phone - Install full version", MessageBoxButton.OK, MessageBoxImage.Warning);
+                var message = FriendlyNetworkError(ex, ServerBox.Text);
+                Log($"Full install failed: {message}");
+                MessageBox.Show(message, "Flex Phone - Install full version", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -1119,6 +1145,18 @@ namespace FlexPhone.Views
         private void ManualMenuItem_Click(object sender, RoutedEventArgs e)
         {
             ShowHelp(gettingStarted: false);
+        }
+
+        private async void CheckForUpdatesMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            await CheckForUpdatesInBackgroundAsync(interactive: true, force: true);
+        }
+
+        private void AutoCheckUpdatesMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            _settings.CheckForUpdates = AutoCheckUpdatesMenuItem.IsChecked;
+            SaveSettings();
+            Log(_settings.CheckForUpdates ? "Automatic update checks are on." : "Automatic update checks are off.");
         }
 
         private void ForgetRememberedSignInMenuItem_Click(object sender, RoutedEventArgs e)
@@ -1204,6 +1242,7 @@ namespace FlexPhone.Views
                 ? "Not registered"
                 : $"{account.Softphone.RegistrationStatus}. {QueueStatusText(account)}";
             InstallFullVersionMenuItem.Visibility = IsInstalledProgramFilesRun() ? Visibility.Collapsed : Visibility.Visible;
+            AutoCheckUpdatesMenuItem.IsChecked = _settings.CheckForUpdates;
 
             DialButton.IsEnabled = account?.Softphone.IsRegistered == true && !inCall && !_dndEnabled;
             AnswerButton.Visibility = hasIncoming ? Visibility.Visible : Visibility.Collapsed;
@@ -1276,7 +1315,7 @@ namespace FlexPhone.Views
         private void Log(string message)
         {
             CallLogList.Items.Insert(0, $"{DateTime.Now:T}  {message}");
-            AnnouncementText.Text = message;
+            _announcements.Announce(AnnouncementText, message);
             while (CallLogList.Items.Count > 120)
             {
                 CallLogList.Items.RemoveAt(CallLogList.Items.Count - 1);
@@ -1286,10 +1325,53 @@ namespace FlexPhone.Views
         private void ApplySettingsToUi()
         {
             ServerBox.Text = _settings.DefaultPbxServer;
+            SelectServerPreset(ServerBox.Text);
             RememberProvisioningCheckBox.IsChecked = _settings.RememberSignIn;
             RememberExistingSignInCheckBox.IsChecked = _settings.RememberSignIn;
             UpdateAccountMenuState();
             UpdateProvisioningLink();
+        }
+
+        private void ServerPresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ServerPresetComboBox.SelectedItem is not ComboBoxItem item)
+            {
+                return;
+            }
+
+            var selectedServer = item.Tag?.ToString() ?? "";
+            var isManual = string.IsNullOrWhiteSpace(selectedServer);
+            ServerLabel.Visibility = isManual ? Visibility.Visible : Visibility.Collapsed;
+            ServerBox.Visibility = isManual ? Visibility.Visible : Visibility.Collapsed;
+            if (!isManual)
+            {
+                ServerBox.Text = selectedServer;
+                _settings.DefaultPbxServer = selectedServer;
+            }
+            UpdateProvisioningLink();
+        }
+
+        private void SelectServerPreset(string server)
+        {
+            var normalized = server.Trim();
+            var preset = normalized.Equals(TappedInPbxServer, StringComparison.OrdinalIgnoreCase)
+                ? TappedInPbxServer
+                : normalized.Equals(DevineCreationsPbxServer, StringComparison.OrdinalIgnoreCase)
+                    ? DevineCreationsPbxServer
+                    : "";
+
+            foreach (var item in ServerPresetComboBox.Items.OfType<ComboBoxItem>())
+            {
+                if (string.Equals(item.Tag?.ToString() ?? "", preset, StringComparison.OrdinalIgnoreCase))
+                {
+                    ServerPresetComboBox.SelectedItem = item;
+                    ServerLabel.Visibility = string.IsNullOrWhiteSpace(preset) ? Visibility.Visible : Visibility.Collapsed;
+                    ServerBox.Visibility = string.IsNullOrWhiteSpace(preset) ? Visibility.Visible : Visibility.Collapsed;
+                    return;
+                }
+            }
+
+            ServerPresetComboBox.SelectedIndex = 0;
         }
 
         private string CurrentPasswordText()
@@ -1437,6 +1519,7 @@ namespace FlexPhone.Views
                 ExtensionBox.Text = remembered.Extension;
                 await RegisterAccountAsync(
                     remembered.Server,
+                    FirstText(remembered.SipServer, remembered.Server),
                     remembered.Extension,
                     remembered.Password,
                     new FlexPhoneLoginResponse
@@ -1464,6 +1547,7 @@ namespace FlexPhone.Views
                 _credentialStore.Save(new RememberedFlexPhoneAccount
                 {
                     Server = account.Server,
+                    SipServer = account.SipServer,
                     Extension = account.Extension,
                     Username = account.Username,
                     Email = account.Email,
@@ -1603,6 +1687,7 @@ namespace FlexPhone.Views
         private void SaveSettings()
         {
             _settings.RememberSignIn = RememberCurrentLoginChoice;
+            _settings.DefaultPbxServer = ServerBox.Text.Trim();
             _settingsService.Save(_settings);
         }
 
@@ -2037,9 +2122,9 @@ namespace FlexPhone.Views
             }
         }
 
-        private async Task CheckForUpdatesInBackgroundAsync(bool interactive)
+        private async Task CheckForUpdatesInBackgroundAsync(bool interactive, bool force = false)
         {
-            if (!_settings.CheckForUpdates)
+            if (!_settings.CheckForUpdates && !force)
             {
                 return;
             }
@@ -2079,7 +2164,7 @@ namespace FlexPhone.Views
             {
                 if (interactive)
                 {
-                    Log($"Update check failed: {ex.Message}");
+                    Log($"Update check failed: {FriendlyNetworkError(ex, ServerBox.Text)}");
                 }
             }
         }
@@ -2213,6 +2298,23 @@ namespace FlexPhone.Views
             return Uri.TryCreate(urlOrPath, UriKind.Absolute, out var absolute)
                 ? absolute
                 : _pbxClient.BuildDownloadUri(ServerBox.Text, urlOrPath);
+        }
+
+        private static string FriendlyNetworkError(Exception ex, string server)
+        {
+            if (ex is TaskCanceledException or TimeoutException)
+            {
+                var target = string.IsNullOrWhiteSpace(server) ? "the selected Flex PBX server" : server.Trim();
+                return $"The phone system at {target} did not respond in time. Check the PBX domain, network connection, or try again after the server route is restored.";
+            }
+
+            if (ex is HttpRequestException)
+            {
+                var target = string.IsNullOrWhiteSpace(server) ? "the selected Flex PBX server" : server.Trim();
+                return $"Flex Phone could not reach {target}. Check the PBX domain, network connection, or server route.";
+            }
+
+            return ex.Message;
         }
 
         private static string GetInstalledAppPath()

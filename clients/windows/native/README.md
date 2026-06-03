@@ -15,8 +15,8 @@ Native Windows softphone for Flex PBX calling, built with .NET 8 and WPF.
 
 ## Defaults
 
-- Default Flex PBX server: `pbx.devinecreations.net`
-- Previous saved `pbx.tappedin.fm` settings are migrated to `pbx.devinecreations.net`
+- Default Flex PBX server: `pbx.tappedin.fm`
+- DevineCreations clients can choose `pbx.devinecreations.net`; saved `flexpbx.devinecreations.net` settings are migrated there.
 - Default TURN server: `turn.tappedin.fm`
 - Local package handoff: `C:\Users\40493\Downloads\flexphone\`
 

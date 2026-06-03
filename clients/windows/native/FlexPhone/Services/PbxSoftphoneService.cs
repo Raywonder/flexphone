@@ -37,6 +37,7 @@ namespace FlexPhone.Services
         private SIPRegistrationUserAgent? _registration;
         private int _activeLine = 1;
         private bool _disposed;
+        private static readonly TimeSpan RegistrationWaitTimeout = TimeSpan.FromSeconds(18);
 
         public PbxSoftphoneService()
         {
@@ -100,6 +101,8 @@ namespace FlexPhone.Services
 
             var registrar = NormalizeSipServer(server);
             var domain = registrar;
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            string? lastRegistrationError = null;
 
             _registration?.Stop();
             _registration = new SIPRegistrationUserAgent(
@@ -120,6 +123,7 @@ namespace FlexPhone.Services
                 IsRegistered = true;
                 RegistrationStatus = $"Registered {extension} on {registrar}";
                 RaiseStateChanged();
+                completion.TrySetResult();
                 if (!wasRegistered)
                 {
                     RegistrationSucceeded?.Invoke(this, RegistrationStatus);
@@ -130,16 +134,32 @@ namespace FlexPhone.Services
                 IsRegistered = false;
                 RegistrationStatus = $"Registration failed: {error}";
                 RaiseStateChanged();
+                completion.TrySetException(new InvalidOperationException(RegistrationStatus));
             };
             _registration.RegistrationTemporaryFailure += (_, error, _) =>
             {
                 IsRegistered = false;
-                RegistrationStatus = $"Registration retrying: {error}";
+                lastRegistrationError = error?.ToString();
+                RegistrationStatus = $"Registration retrying: {lastRegistrationError}";
                 RaiseStateChanged();
             };
             _registration.Start();
             RegistrationStatus = $"Registering {extension} on {registrar}";
             RaiseStateChanged();
+
+            try
+            {
+                await completion.Task.WaitAsync(RegistrationWaitTimeout);
+            }
+            catch (TimeoutException ex)
+            {
+                IsRegistered = false;
+                RegistrationStatus = string.IsNullOrWhiteSpace(lastRegistrationError)
+                    ? $"Registration timed out on {registrar}"
+                    : $"Registration timed out on {registrar}: {lastRegistrationError}";
+                RaiseStateChanged();
+                throw new TimeoutException($"{RegistrationStatus}. Check that SIP UDP 5060 and RTP ports are reachable for this PBX.", ex);
+            }
         }
 
         public Task UnregisterAsync()

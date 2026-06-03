@@ -3,6 +3,7 @@ namespace FlexPhone.Models
     public sealed class RememberedFlexPhoneAccount
     {
         public string Server { get; set; } = "";
+        public string SipServer { get; set; } = "";
         public string Extension { get; set; } = "";
         public string Username { get; set; } = "";
         public string Email { get; set; } = "";

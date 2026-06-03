@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Version = "1.0.5",
-    [string]$Build = "76",
+    [string]$Build = "80",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -60,21 +60,28 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build keeps pbx.tappedin.fm as the default server, moves server changes into Advanced settings, adds show password, adds account menu actions for email linking, reset, and login pages, separates account login from SIP registration credentials when Flex PBX provides a SIP password, and refreshes updater metadata for the current installer."
+    release_notes = "Flex Phone $Version.$Build fixes extension sign-in feedback so the app announces Flex PBX login, waits for SIP registration, and reports PBX route or SIP registration failures instead of appearing to do nothing. It also includes the NVDA controller client library for direct NVDA status announcements when NVDA is running and keeps the TappedIn and DevineCreations PBX domain chooser."
     release_notes_list = @(
-        "pbx.tappedin.fm is the normal default server.",
-        "Changing server or provider domain now lives in Advanced settings.",
-        "Existing sign-in includes a show password checkbox.",
-        "The File, Account menu can link an email, reset password, open user login, and show admin login for admin roles.",
-        "Email linking shows the old linked email when known and requires confirmation for the new email.",
-        "Flex Phone uses a returned SIP password for SIP registration when it differs from the account login password.",
+        "Sign-in now announces the login step, the phone registration step, and any registration timeout or route failure.",
+        "Flex Phone now waits for SIP registration before treating extension sign-in as complete.",
+        "PBX login responses can provide a separate SIP server, which Flex Phone now honors.",
+        "Windows builds include nvdaControllerClient64.dll for direct NVDA announcements when NVDA is running.",
+        "Sign-in now offers TappedIn Flex PBX and DevineCreations Flex PBX domain choices.",
+        "pbx.tappedin.fm remains the normal default server.",
+        "DevineCreations clients can choose pbx.devinecreations.net without typing it manually.",
+        "Manual PBX domain entry remains available for custom or client-owned servers.",
+        "Flex PBX web requests now allow more time and show a clearer timeout message.",
+        "The Help menu now includes Check for updates now and Check for updates automatically.",
         "Updater metadata points to the current installer and portable build."
     )
     checksum = $installerHash
     checksum_sha256 = $installerHash
     portable_checksum_sha256 = $portableHash
 }
-$manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+[System.IO.File]::WriteAllText(
+    $manifestPath,
+    ($manifest | ConvertTo-Json -Depth 4),
+    [System.Text.UTF8Encoding]::new($false))
 Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $OutputDir "flexphone-update.json") -Force
 
 Write-Host "Installer: $installerPath"

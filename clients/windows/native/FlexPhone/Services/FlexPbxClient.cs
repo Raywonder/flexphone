@@ -37,6 +37,15 @@ namespace FlexPhone.Services
         public string TokenUrl { get; set; } = "";
         [JsonPropertyName("authorization_url")]
         public string AuthorizationUrl { get; set; } = "";
+        [JsonPropertyName("sip_settings")]
+        public FlexPhoneSipSettings SipSettings { get; set; } = new();
+    }
+
+    public sealed class FlexPhoneSipSettings
+    {
+        public string Server { get; set; } = "";
+        public int Port { get; set; } = 5060;
+        public string Transport { get; set; } = "UDP";
     }
 
     public sealed class FlexPhoneProvisionResponse : FlexPhoneLoginResponse
@@ -207,7 +216,7 @@ namespace FlexPhone.Services
 
     public sealed class FlexPbxClient
     {
-        private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(8) };
+        private readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(20) };
 
         public Uri BuildBrowserLoginUri(string server, string extension, string path)
         {
