@@ -5,9 +5,27 @@ namespace FlexPhone.Services
 {
     public sealed class FlexPhoneSoundService
     {
-        public void PlayIncomingRing(bool enabled)
+        private static readonly Dictionary<string, string> RingtoneFiles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Incoming call"] = "Ringtones/ringtone-incoming-call.wav",
+            ["Incoming call alternate"] = "Ringtones/ringtone-incoming-call-alt.wav",
+            ["Ring Ring Flitch"] = "Ringtones/ringtone-ring-ring-flitch.wav",
+            ["Are you gonna answer"] = "Ringtones/ringtone-are-you-gonna-answer.wav"
+        };
+
+        public static IReadOnlyList<string> AvailableRingtones { get; } =
+            RingtoneFiles.Keys.OrderBy(name => name).ToArray();
+
+        public void PlayIncomingRing(bool enabled, string? ringtone = null)
         {
             if (!enabled)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(ringtone) &&
+                RingtoneFiles.TryGetValue(ringtone.Trim(), out var selectedFile) &&
+                PlayBundledSound(selectedFile, null))
             {
                 return;
             }
@@ -55,7 +73,7 @@ namespace FlexPhone.Services
             PlayBundledSound("network-change.wav", SystemSounds.Question);
         }
 
-        private static void PlayBundledSound(string fileName, SystemSound fallback)
+        private static bool PlayBundledSound(string fileName, SystemSound? fallback)
         {
             try
             {
@@ -65,7 +83,7 @@ namespace FlexPhone.Services
                     using var player = new SoundPlayer(resource.Stream);
                     player.Load();
                     player.Play();
-                    return;
+                    return true;
                 }
             }
             catch
@@ -73,7 +91,8 @@ namespace FlexPhone.Services
                 // Fall through to the Windows sound so alerts are never silent.
             }
 
-            fallback.Play();
+            fallback?.Play();
+            return false;
         }
     }
 }

@@ -24,6 +24,7 @@ namespace FlexPhone.Views
                 StartMinimizedToTray = settings.StartMinimizedToTray,
                 RememberSignIn = settings.RememberSignIn,
                 PlayCallSounds = settings.PlayCallSounds,
+                IncomingRingtone = settings.IncomingRingtone,
                 AutoAnswer = settings.AutoAnswer,
                 ProviderType = settings.ProviderType,
                 EnterDefaultAction = settings.EnterDefaultAction,
@@ -75,6 +76,8 @@ namespace FlexPhone.Views
             SelectAutoQueueMode(Settings.AutoQueueSignInOutMode);
             IntercomCheckBox.IsChecked = Settings.AllowIntercom;
             PlaySoundsCheckBox.IsChecked = Settings.PlayCallSounds;
+            LoadRingtoneChoices();
+            SelectComboText(IncomingRingtoneComboBox, Settings.IncomingRingtone);
             MinimizeToTrayCheckBox.IsChecked = Settings.MinimizeToTray;
             StartMinimizedCheckBox.IsChecked = Settings.StartMinimizedToTray;
             CheckUpdatesCheckBox.IsChecked = Settings.CheckForUpdates;
@@ -123,6 +126,7 @@ namespace FlexPhone.Views
             Settings.AutoQueueSignInOutMode = (AutoQueueModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Off";
             Settings.AllowIntercom = IntercomCheckBox.IsChecked == true;
             Settings.PlayCallSounds = PlaySoundsCheckBox.IsChecked == true;
+            Settings.IncomingRingtone = FirstText(IncomingRingtoneComboBox.Text, "Incoming call");
             Settings.MinimizeToTray = MinimizeToTrayCheckBox.IsChecked == true;
             Settings.StartMinimizedToTray = StartMinimizedCheckBox.IsChecked == true;
             Settings.CheckForUpdates = CheckUpdatesCheckBox.IsChecked == true;
@@ -269,6 +273,15 @@ namespace FlexPhone.Views
         {
             InputAudioDeviceComboBox.Items.Add("Default communications microphone");
             OutputAudioDeviceComboBox.Items.Add("Default communications speaker");
+        }
+
+        private void LoadRingtoneChoices()
+        {
+            IncomingRingtoneComboBox.Items.Clear();
+            foreach (var ringtone in FlexPhoneSoundService.AvailableRingtones)
+            {
+                IncomingRingtoneComboBox.Items.Add(ringtone);
+            }
         }
 
         private static void SelectComboText(System.Windows.Controls.ComboBox comboBox, string value)

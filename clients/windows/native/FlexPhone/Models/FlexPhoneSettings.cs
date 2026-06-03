@@ -10,6 +10,7 @@ namespace FlexPhone.Models
         public bool StartMinimizedToTray { get; set; }
         public bool RememberSignIn { get; set; } = true;
         public bool PlayCallSounds { get; set; } = true;
+        public string IncomingRingtone { get; set; } = "Incoming call";
         public bool AutoAnswer { get; set; }
         public string ProviderType { get; set; } = "Flex PBX";
         public string EnterDefaultAction { get; set; } = "Activate focused control";

@@ -78,6 +78,9 @@
                               AutomationProperties.Name="Allow intercom calls"/>
                     <CheckBox x:Name="PlaySoundsCheckBox" Content="Play Flex Phone call sounds" Margin="0,8,0,0"
                               AutomationProperties.Name="Play Flex Phone call sounds"/>
+                    <TextBlock Text="Incoming ringtone" Margin="0,14,0,0"/>
+                    <ComboBox x:Name="IncomingRingtoneComboBox" Margin="0,4,0,10"
+                              AutomationProperties.Name="Incoming ringtone"/>
                     <TextBlock Text="Presence status" Margin="0,14,0,0"/>
                     <ComboBox x:Name="UserStatusComboBox" Margin="0,4,0,10"
                               AutomationProperties.Name="Presence status">

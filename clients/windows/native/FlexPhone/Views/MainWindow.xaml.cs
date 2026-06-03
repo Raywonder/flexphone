@@ -361,7 +361,7 @@ namespace FlexPhone.Views
             softphone.IncomingCall += async (_, caller) => await Dispatcher.InvokeAsync(async () =>
             {
                 Log($"Incoming call for {account.DisplayName} from {caller}");
-                _sounds.PlayIncomingRing(_settings.PlayCallSounds);
+                _sounds.PlayIncomingRing(_settings.PlayCallSounds, _settings.IncomingRingtone);
                 ShowFlexPhoneNotification("Incoming call", $"Call from {caller}", ToolTipIcon.Info);
                 if (_settings.AutoAnswer && !_dndEnabled)
                 {
