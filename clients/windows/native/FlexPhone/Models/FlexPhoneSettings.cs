@@ -12,7 +12,10 @@ namespace FlexPhone.Models
         public bool PlayCallSounds { get; set; } = true;
         public bool AutoAnswer { get; set; }
         public string ProviderType { get; set; } = "Flex PBX";
+        public string EnterDefaultAction { get; set; } = "Activate focused control";
         public string SpacebarInCallAction { get; set; } = "Mute or unmute microphone";
+        public string InputAudioDevice { get; set; } = "Default communications microphone";
+        public string OutputAudioDevice { get; set; } = "Default communications speaker";
         public string ClientDisplayName { get; set; } = "";
         public string AutoQueueSignInOutMode { get; set; } = "Off";
         public bool AllowIntercom { get; set; } = true;

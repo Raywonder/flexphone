@@ -51,8 +51,19 @@
                     <ComboBox x:Name="SpacebarActionComboBox" Margin="0,4,0,10"
                               AutomationProperties.Name="Spacebar during calls">
                         <ComboBoxItem Content="Mute or unmute microphone"/>
+                        <ComboBoxItem Content="End current call"/>
                         <ComboBoxItem Content="Hold or resume current call"/>
+                        <ComboBoxItem Content="Transfer current call"/>
                         <ComboBoxItem Content="Conference open calls"/>
+                        <ComboBoxItem Content="No action"/>
+                    </ComboBox>
+                    <TextBlock Text="Enter key default"/>
+                    <ComboBox x:Name="EnterActionComboBox" Margin="0,4,0,10"
+                              AutomationProperties.Name="Enter key default"
+                              AutomationProperties.HelpText="Enter always activates the focused button. This setting controls Enter only when focus is not on a button or text field.">
+                        <ComboBoxItem Content="Activate focused control"/>
+                        <ComboBoxItem Content="Dial as intercom"/>
+                        <ComboBoxItem Content="Open messages"/>
                     </ComboBox>
                     <TextBlock Text="Automatic queue sign-in and sign-out" Margin="0,14,0,0"/>
                     <ComboBox x:Name="AutoQueueModeComboBox" Margin="0,4,0,10"
@@ -75,6 +86,20 @@
                         <ComboBoxItem Content="Do not disturb"/>
                         <ComboBoxItem Content="Away"/>
                     </ComboBox>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Audio">
+                <StackPanel Margin="12">
+                    <TextBlock Text="Microphone"/>
+                    <ComboBox x:Name="InputAudioDeviceComboBox" IsEditable="True" Margin="0,4,0,10"
+                              AutomationProperties.Name="Microphone"
+                              AutomationProperties.HelpText="Choose the microphone Flex Phone should prefer for calls. Leave default to follow Windows communications device settings."/>
+                    <TextBlock Text="Speaker or headset"/>
+                    <ComboBox x:Name="OutputAudioDeviceComboBox" IsEditable="True" Margin="0,4,0,10"
+                              AutomationProperties.Name="Speaker or headset"
+                              AutomationProperties.HelpText="Choose the playback device Flex Phone should prefer for calls. Leave default to follow Windows communications device settings."/>
+                    <TextBlock Text="If a selected device is unavailable, Flex Phone falls back to the Windows default communications device." TextWrapping="Wrap"/>
                 </StackPanel>
             </TabItem>
 

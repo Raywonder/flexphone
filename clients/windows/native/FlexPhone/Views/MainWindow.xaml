@@ -69,7 +69,7 @@
                                   AutomationProperties.Name="Exit"/>
                     </MenuItem>
                     <MenuItem Header="_Call" AutomationProperties.Name="Call">
-                        <MenuItem Header="_Dial" InputGestureText="Enter" Click="DialButton_Click"
+                    <MenuItem Header="_Dial" Click="DialButton_Click"
                                   AutomationProperties.Name="Dial"/>
                         <MenuItem Header="_Pick up" Click="AnswerButton_Click"
                                   AutomationProperties.Name="Pick up"/>
@@ -235,7 +235,7 @@
                               AutomationProperties.Name="Remember this sign-in"
                               AutomationProperties.HelpText="Flex Phone will keep this device signed in for you on this Windows account."/>
 
-                    <Button x:Name="RegisterButton" Content="Sign in" Click="RegisterButton_Click" IsDefault="True"
+                    <Button x:Name="RegisterButton" Content="Sign in" Click="RegisterButton_Click"
                             AutomationProperties.Name="Sign in"/>
 
                     <WrapPanel Margin="0,6,0,0">

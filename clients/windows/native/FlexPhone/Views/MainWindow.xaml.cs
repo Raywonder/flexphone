@@ -832,6 +832,12 @@ namespace FlexPhone.Views
 
             if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.None && !IsTextInputFocused())
             {
+                if (TryActivateFocusedButton())
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 if (SelectedAccount?.Softphone.IsInCall == true)
                 {
                     e.Handled = true;
@@ -849,6 +855,11 @@ namespace FlexPhone.Views
             if (e.Key == Key.Enter && !IsTextInputFocused())
             {
                 e.Handled = true;
+                if (TryActivateFocusedButton())
+                {
+                    return;
+                }
+
                 if (IsKeyboardFocusInKeypad()
                     && Keyboard.FocusedElement is System.Windows.Controls.Button button
                     && button.Content?.ToString() is { Length: > 0 } label)
@@ -857,7 +868,7 @@ namespace FlexPhone.Views
                 }
                 else if (SelectedAccount?.Softphone.IsInCall != true)
                 {
-                    await DialSelectedDestinationAsync();
+                    await RunEnterDefaultActionAsync();
                 }
                 return;
             }
@@ -937,6 +948,10 @@ namespace FlexPhone.Views
 
             switch (_settings.SpacebarInCallAction)
             {
+                case "End current call":
+                    await HangupActiveOrFirstCallAsync(account);
+                    _sounds.PlayCallEnded(_settings.PlayCallSounds);
+                    break;
                 case "Hold or resume current call":
                     if (account.Softphone.ActiveLineState == PbxLineState.Holding)
                     {
@@ -947,13 +962,37 @@ namespace FlexPhone.Views
                         await RunActionAsync("Hold", () => account.Softphone.HoldAsync(), account.Softphone);
                     }
                     break;
+                case "Transfer current call":
+                    await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, TransferDestinationBox.Text.Trim()), account.Softphone);
+                    break;
                 case "Conference open calls":
                     Log("Conference open calls is selected. Use Lines to choose each open call; server-side conferencing must be enabled by Flex PBX.");
+                    break;
+                case "No action":
+                    Log("Spacebar has no in-call action.");
                     break;
                 default:
                     await RunActionAsync(account.Softphone.IsMuted ? "Unmute" : "Mute", () => account.Softphone.SetMutedAsync(!account.Softphone.IsMuted), account.Softphone);
                     break;
             }
+        }
+
+        private async Task RunEnterDefaultActionAsync()
+        {
+            switch (_settings.EnterDefaultAction)
+            {
+                case "Dial as intercom":
+                    IntercomButton_Click(IntercomButton, new RoutedEventArgs());
+                    break;
+                case "Open messages":
+                    MessagesButton_Click(MessagesButton, new RoutedEventArgs());
+                    break;
+                default:
+                    Log("Enter activates the focused control. Focus Dial to place a normal call, or type a number and use the Dial button.");
+                    break;
+            }
+
+            await Task.CompletedTask;
         }
 
         private async Task HangupActiveOrFirstCallAsync(PbxAccountSession account)
@@ -1890,6 +1929,19 @@ namespace FlexPhone.Views
             return Keyboard.FocusedElement is System.Windows.Controls.TextBox
                 or System.Windows.Controls.PasswordBox
                 or System.Windows.Controls.ComboBox;
+        }
+
+        private static bool TryActivateFocusedButton()
+        {
+            if (Keyboard.FocusedElement is not System.Windows.Controls.Button button
+                || !button.IsEnabled
+                || !button.IsVisible)
+            {
+                return false;
+            }
+
+            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            return true;
         }
 
         private void MoveFocusWithinActiveView(bool backwards)

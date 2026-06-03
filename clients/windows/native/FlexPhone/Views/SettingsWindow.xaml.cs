@@ -26,7 +26,10 @@ namespace FlexPhone.Views
                 PlayCallSounds = settings.PlayCallSounds,
                 AutoAnswer = settings.AutoAnswer,
                 ProviderType = settings.ProviderType,
+                EnterDefaultAction = settings.EnterDefaultAction,
                 SpacebarInCallAction = settings.SpacebarInCallAction,
+                InputAudioDevice = settings.InputAudioDevice,
+                OutputAudioDevice = settings.OutputAudioDevice,
                 ClientDisplayName = settings.ClientDisplayName,
                 AutoQueueSignInOutMode = settings.AutoQueueSignInOutMode,
                 AllowIntercom = settings.AllowIntercom,
@@ -64,6 +67,10 @@ namespace FlexPhone.Views
             TurnServerBox.Text = Settings.EffectiveTurnServer;
             AutoAnswerCheckBox.IsChecked = Settings.AutoAnswer;
             DisplayNameBox.Text = string.IsNullOrWhiteSpace(Settings.ClientDisplayName) ? currentDisplayName : Settings.ClientDisplayName;
+            LoadAudioDeviceChoices();
+            SelectComboText(InputAudioDeviceComboBox, Settings.InputAudioDevice);
+            SelectComboText(OutputAudioDeviceComboBox, Settings.OutputAudioDevice);
+            SelectEnterAction(Settings.EnterDefaultAction);
             SelectSpacebarAction(Settings.SpacebarInCallAction);
             SelectAutoQueueMode(Settings.AutoQueueSignInOutMode);
             IntercomCheckBox.IsChecked = Settings.AllowIntercom;
@@ -109,7 +116,10 @@ namespace FlexPhone.Views
             Settings.CustomTurnServer = Settings.UseCustomTurnServer ? TurnServerBox.Text.Trim() : "";
             Settings.AutoAnswer = AutoAnswerCheckBox.IsChecked == true;
             Settings.ClientDisplayName = DisplayNameBox.Text.Trim();
+            Settings.EnterDefaultAction = (EnterActionComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? EnterActionComboBox.Text.Trim();
             Settings.SpacebarInCallAction = (SpacebarActionComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Mute or unmute microphone";
+            Settings.InputAudioDevice = FirstText(InputAudioDeviceComboBox.Text, "Default communications microphone");
+            Settings.OutputAudioDevice = FirstText(OutputAudioDeviceComboBox.Text, "Default communications speaker");
             Settings.AutoQueueSignInOutMode = (AutoQueueModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Off";
             Settings.AllowIntercom = IntercomCheckBox.IsChecked == true;
             Settings.PlayCallSounds = PlaySoundsCheckBox.IsChecked == true;
@@ -239,6 +249,46 @@ namespace FlexPhone.Views
             }
 
             SpacebarActionComboBox.SelectedIndex = 0;
+        }
+
+        private void SelectEnterAction(string action)
+        {
+            foreach (var item in EnterActionComboBox.Items.OfType<ComboBoxItem>())
+            {
+                if (string.Equals(item.Content?.ToString(), action, StringComparison.OrdinalIgnoreCase))
+                {
+                    EnterActionComboBox.SelectedItem = item;
+                    return;
+                }
+            }
+
+            EnterActionComboBox.SelectedIndex = 0;
+        }
+
+        private void LoadAudioDeviceChoices()
+        {
+            InputAudioDeviceComboBox.Items.Add("Default communications microphone");
+            OutputAudioDeviceComboBox.Items.Add("Default communications speaker");
+        }
+
+        private static void SelectComboText(System.Windows.Controls.ComboBox comboBox, string value)
+        {
+            var target = FirstText(value, comboBox.Items.OfType<object>().FirstOrDefault()?.ToString() ?? "");
+            foreach (var item in comboBox.Items)
+            {
+                if (string.Equals(item.ToString(), target, StringComparison.OrdinalIgnoreCase))
+                {
+                    comboBox.SelectedItem = item;
+                    return;
+                }
+            }
+
+            comboBox.Text = target;
+        }
+
+        private static string FirstText(params string[] values)
+        {
+            return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? "";
         }
 
         private static string NormalizePath(string path)
