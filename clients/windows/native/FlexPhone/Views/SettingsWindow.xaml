@@ -112,6 +112,8 @@
                               AutomationProperties.Name="Check for updates"/>
                     <CheckBox x:Name="AutoInstallUpdatesCheckBox" Content="Automatically install updates" Margin="0,8,0,0"
                               AutomationProperties.Name="Automatically install updates"/>
+                    <CheckBox x:Name="AnnounceUpdateInstallRestartCheckBox" Content="Announce before installing and restarting for updates" Margin="0,8,0,0"
+                              AutomationProperties.Name="Announce before installing and restarting for updates"/>
                 </StackPanel>
             </TabItem>
 

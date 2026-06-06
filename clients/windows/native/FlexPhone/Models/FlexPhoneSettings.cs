@@ -22,6 +22,7 @@ namespace FlexPhone.Models
         public bool AllowIntercom { get; set; } = true;
         public bool CheckForUpdates { get; set; } = true;
         public bool AutomaticallyInstallUpdates { get; set; } = true;
+        public bool AnnounceUpdateInstallRestart { get; set; } = true;
         public int UpdatePostponeCount { get; set; }
         public DateTime UpdatePostponedUntil { get; set; } = DateTime.MinValue;
         public int DefaultLocalSipPort { get; set; } = 5066;

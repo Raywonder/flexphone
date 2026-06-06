@@ -4,8 +4,8 @@
   "private": true,
   "description": "Workspace organizer for native Flex Phone clients and legacy review trees.",
   "scripts": {
-    "build:windows": "powershell -ExecutionPolicy Bypass -File clients/windows/native/build.ps1 -Clean -Publish -Version 1.0.5 -Build 82",
-    "build:windows:installer": "powershell -ExecutionPolicy Bypass -File clients/windows/native/scripts/build-windows-installer.ps1 -Version 1.0.5 -Build 82",
+    "build:windows": "powershell -ExecutionPolicy Bypass -File clients/windows/native/build.ps1 -Clean -Publish -Version 1.0.5 -Build 83",
+    "build:windows:installer": "powershell -ExecutionPolicy Bypass -File clients/windows/native/scripts/build-windows-installer.ps1 -Version 1.0.5 -Build 83",
     "legacy:electron:dev": "npm --prefix legacy/electron run dev",
     "legacy:electron:build": "npm --prefix legacy/electron run build"
   }

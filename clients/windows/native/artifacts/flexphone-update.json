@@ -1,12 +1,14 @@
 {
-    "version":  "1.0.5.82",
-    "latest_version":  "1.0.5.82",
+    "version":  "1.0.5.83",
+    "latest_version":  "1.0.5.83",
     "installer_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.5.exe",
     "download_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.5.exe",
     "portable_url":  "/downloads/flexphone/FlexPhone-1.0.5-win-x64-portable.zip",
     "file_name":  "FlexPhone-Setup-1.0.5.exe",
-    "release_notes":  "Flex Phone 1.0.5.82 fixes extension sign-in feedback so the app announces Flex PBX login, waits for SIP registration, and reports PBX route or SIP registration failures instead of appearing to do nothing. It also includes the NVDA controller client library for direct NVDA status announcements when NVDA is running and keeps the TappedIn and DevineCreations PBX domain chooser.",
+    "release_notes":  "Flex Phone 1.0.5.83 adds an optional speech setting that announces when an update is about to install and explains that Flex Phone will restart when installation is complete. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser.",
     "release_notes_list":  [
+                               "A new Updates setting can announce before Flex Phone installs an update and restarts.",
+                               "The install announcement is spoken through the existing NVDA and screen reader announcement path when enabled.",
                                "Sign-in now announces the login step, the phone registration step, and any registration timeout or route failure.",
                                "Flex Phone now waits for SIP registration before treating extension sign-in as complete.",
                                "PBX login responses can provide a separate SIP server, which Flex Phone now honors.",
@@ -19,7 +21,7 @@
                                "The Help menu now includes Check for updates now and Check for updates automatically.",
                                "Updater metadata points to the current installer and portable build."
                            ],
-    "checksum":  "64cb8720686f505498a832cffbb8ac80315b56482d69cb22125bcb14d1847f47",
-    "checksum_sha256":  "64cb8720686f505498a832cffbb8ac80315b56482d69cb22125bcb14d1847f47",
-    "portable_checksum_sha256":  "670cc56dcecf36299723a8607058d473dd82c69917b0bac64b4a7f30b1a661ae"
+    "checksum":  "9b21772dad60dc39648a5071878df3577c9f3f5a4077a86af92176964c173ae8",
+    "checksum_sha256":  "9b21772dad60dc39648a5071878df3577c9f3f5a4077a86af92176964c173ae8",
+    "portable_checksum_sha256":  "eab8dcd9dc32b7e15fc51f6c7be4ab600abfbaca4eacf35cb9935e3dec060115"
 }

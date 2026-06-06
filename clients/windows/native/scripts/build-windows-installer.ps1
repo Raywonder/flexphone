@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Version = "1.0.5",
-    [string]$Build = "82",
+    [string]$Build = "83",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -60,8 +60,10 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build fixes extension sign-in feedback so the app announces Flex PBX login, waits for SIP registration, and reports PBX route or SIP registration failures instead of appearing to do nothing. It also includes the NVDA controller client library for direct NVDA status announcements when NVDA is running and keeps the TappedIn and DevineCreations PBX domain chooser."
+    release_notes = "Flex Phone $Version.$Build adds an optional speech setting that announces when an update is about to install and explains that Flex Phone will restart when installation is complete. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser."
     release_notes_list = @(
+        "A new Updates setting can announce before Flex Phone installs an update and restarts.",
+        "The install announcement is spoken through the existing NVDA and screen reader announcement path when enabled.",
         "Sign-in now announces the login step, the phone registration step, and any registration timeout or route failure.",
         "Flex Phone now waits for SIP registration before treating extension sign-in as complete.",
         "PBX login responses can provide a separate SIP server, which Flex Phone now honors.",

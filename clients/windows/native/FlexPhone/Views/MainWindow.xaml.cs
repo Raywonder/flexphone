@@ -2337,6 +2337,10 @@ namespace FlexPhone.Views
             if (File.Exists(installerPath)) File.Delete(installerPath);
             File.Move(tempPath, installerPath);
             File.WriteAllText(Path.Combine(root, "pending-update-success.txt"), manifest.EffectiveVersion);
+            if (_settings.AnnounceUpdateInstallRestart)
+            {
+                Log($"Flex Phone {manifest.EffectiveVersion} will be installed now. Flex Phone will restart when the update is complete.");
+            }
             var relaunchPath = launchInstalledAfterInstall
                 ? GetInstalledAppPath()
                 : Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "FlexPhone.exe");

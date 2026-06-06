@@ -36,6 +36,7 @@ namespace FlexPhone.Views
                 AllowIntercom = settings.AllowIntercom,
                 CheckForUpdates = settings.CheckForUpdates,
                 AutomaticallyInstallUpdates = settings.AutomaticallyInstallUpdates,
+                AnnounceUpdateInstallRestart = settings.AnnounceUpdateInstallRestart,
                 UpdatePostponeCount = settings.UpdatePostponeCount,
                 UpdatePostponedUntil = settings.UpdatePostponedUntil,
                 DefaultLocalSipPort = settings.DefaultLocalSipPort,
@@ -82,6 +83,7 @@ namespace FlexPhone.Views
             StartMinimizedCheckBox.IsChecked = Settings.StartMinimizedToTray;
             CheckUpdatesCheckBox.IsChecked = Settings.CheckForUpdates;
             AutoInstallUpdatesCheckBox.IsChecked = Settings.AutomaticallyInstallUpdates;
+            AnnounceUpdateInstallRestartCheckBox.IsChecked = Settings.AnnounceUpdateInstallRestart;
             UpdateManifestPathBox.Text = Settings.UpdateManifestPath;
             AnnounceLineChangesCheckBox.IsChecked = Settings.AnnounceLineChanges;
             AnnounceQueueDurationCheckBox.IsChecked = Settings.AnnounceQueueDuration;
@@ -131,6 +133,7 @@ namespace FlexPhone.Views
             Settings.StartMinimizedToTray = StartMinimizedCheckBox.IsChecked == true;
             Settings.CheckForUpdates = CheckUpdatesCheckBox.IsChecked == true;
             Settings.AutomaticallyInstallUpdates = AutoInstallUpdatesCheckBox.IsChecked == true;
+            Settings.AnnounceUpdateInstallRestart = AnnounceUpdateInstallRestartCheckBox.IsChecked == true;
             Settings.UserStatus = (UserStatusComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Available";
             Settings.BrowserLoginPath = NormalizePath(BrowserLoginPathBox.Text);
             Settings.AccountRecoveryPath = NormalizePath(AccountRecoveryPathBox.Text);
