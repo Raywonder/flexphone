@@ -112,6 +112,21 @@ namespace FlexPhone.Services
                 settings.CallScreeningToggleCode = "*56";
             }
 
+            if (string.IsNullOrWhiteSpace(settings.AnswerHotKey))
+            {
+                settings.AnswerHotKey = "Ctrl+Shift+A";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.HangupHotKey))
+            {
+                settings.HangupHotKey = "Ctrl+Shift+H";
+            }
+
+            if (string.IsNullOrWhiteSpace(settings.HoldHotKey))
+            {
+                settings.HoldHotKey = "Ctrl+Shift+O";
+            }
+
             return settings;
         }
     }

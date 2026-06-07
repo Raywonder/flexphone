@@ -9,7 +9,9 @@ namespace FlexPhone.Views
     public partial class SettingsWindow : Window
     {
         private readonly FlexPbxClient _pbxClient = new();
+        private readonly FlexPhoneSoundService _sounds = new();
         private readonly string _currentExtension;
+        private bool _previewRingtones;
 
         public SettingsWindow(FlexPhoneSettings settings, string currentServer, string currentExtension, string currentDisplayName)
         {
@@ -58,6 +60,9 @@ namespace FlexPhone.Views
                 AnnounceCallEnded = settings.AnnounceCallEnded,
                 DetailedLineAnnouncements = settings.DetailedLineAnnouncements,
                 ShowKeyboardHints = settings.ShowKeyboardHints,
+                AnswerHotKey = settings.AnswerHotKey,
+                HangupHotKey = settings.HangupHotKey,
+                HoldHotKey = settings.HoldHotKey,
                 HasSeenGettingStarted = settings.HasSeenGettingStarted
             };
             _currentExtension = currentExtension;
@@ -90,6 +95,9 @@ namespace FlexPhone.Views
             AnnounceCallEndedCheckBox.IsChecked = Settings.AnnounceCallEnded;
             DetailedLineAnnouncementsCheckBox.IsChecked = Settings.DetailedLineAnnouncements;
             ShowKeyboardHintsCheckBox.IsChecked = Settings.ShowKeyboardHints;
+            AnswerHotKeyBox.Text = FirstText(Settings.AnswerHotKey, "Ctrl+Shift+A");
+            HangupHotKeyBox.Text = FirstText(Settings.HangupHotKey, "Ctrl+Shift+H");
+            HoldHotKeyBox.Text = FirstText(Settings.HoldHotKey, "Ctrl+Shift+O");
             BrowserLoginPathBox.Text = Settings.BrowserLoginPath;
             AccountRecoveryPathBox.Text = Settings.AccountRecoveryPath;
             ClientDownloadPathBox.Text = Settings.ClientDownloadPath;
@@ -155,6 +163,9 @@ namespace FlexPhone.Views
             Settings.AnnounceCallEnded = AnnounceCallEndedCheckBox.IsChecked == true;
             Settings.DetailedLineAnnouncements = DetailedLineAnnouncementsCheckBox.IsChecked == true;
             Settings.ShowKeyboardHints = ShowKeyboardHintsCheckBox.IsChecked == true;
+            Settings.AnswerHotKey = NormalizeHotKey(AnswerHotKeyBox.Text, "Ctrl+Shift+A");
+            Settings.HangupHotKey = NormalizeHotKey(HangupHotKeyBox.Text, "Ctrl+Shift+H");
+            Settings.HoldHotKey = NormalizeHotKey(HoldHotKeyBox.Text, "Ctrl+Shift+O");
             DialogResult = true;
         }
 
@@ -287,6 +298,19 @@ namespace FlexPhone.Views
             }
         }
 
+        private void IncomingRingtoneComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            _previewRingtones = true;
+        }
+
+        private void IncomingRingtoneComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_previewRingtones && IncomingRingtoneComboBox.SelectedItem?.ToString() is { Length: > 0 } ringtone)
+            {
+                _sounds.PreviewRingtone(ringtone);
+            }
+        }
+
         private static void SelectComboText(System.Windows.Controls.ComboBox comboBox, string value)
         {
             var target = FirstText(value, comboBox.Items.OfType<object>().FirstOrDefault()?.ToString() ?? "");
@@ -317,6 +341,24 @@ namespace FlexPhone.Views
         {
             var value = code.Trim();
             return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private static string NormalizeHotKey(string hotKey, string fallback)
+        {
+            var value = hotKey.Trim();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return fallback;
+            }
+
+            if (!value.Contains('+') && value.Contains(' '))
+            {
+                value = string.Join("+", value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            }
+
+            return value
+                .Replace("Control", "Ctrl", StringComparison.OrdinalIgnoreCase)
+                .Replace(" ", "");
         }
     }
 }

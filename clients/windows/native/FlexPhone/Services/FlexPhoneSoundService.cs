@@ -33,6 +33,18 @@ namespace FlexPhone.Services
             PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk);
         }
 
+        public void PreviewRingtone(string? ringtone)
+        {
+            if (!string.IsNullOrWhiteSpace(ringtone) &&
+                RingtoneFiles.TryGetValue(ringtone.Trim(), out var selectedFile) &&
+                PlayBundledSound(selectedFile, null))
+            {
+                return;
+            }
+
+            PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk);
+        }
+
         public void PlayCallConnected(bool enabled)
         {
             if (!enabled)

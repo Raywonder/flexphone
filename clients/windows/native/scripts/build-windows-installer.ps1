@@ -1,8 +1,8 @@
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
-    [string]$Version = "1.0.5",
-    [string]$Build = "83",
+    [string]$Version = "1.0.6",
+    [string]$Build = "84",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -60,9 +60,16 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build adds an optional speech setting that announces when an update is about to install and explains that Flex Phone will restart when installation is complete. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser."
+    release_notes = "Flex Phone $Version.$Build improves update announcements, settings organization, ringtone previews, menu keyboard behavior, and configurable call hotkeys. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser."
     release_notes_list = @(
-        "A new Updates setting can announce before Flex Phone installs an update and restarts.",
+        "Flex Phone can announce before it installs an update and restarts.",
+        "Startup and update settings now live in General settings.",
+        "Audio-related options, including ringtone selection, now live under Audio settings.",
+        "Ringtone choices can be previewed from the ringtone list.",
+        "Ctrl comma opens Settings.",
+        "A Hotkeys tab lists function-key actions and configurable global call hotkeys.",
+        "Main window function keys F1 through F12 trigger call actions directly.",
+        "Menu navigation no longer treats Enter as a dial command while focus is in menus.",
         "The install announcement is spoken through the existing NVDA and screen reader announcement path when enabled.",
         "Sign-in now announces the login step, the phone registration step, and any registration timeout or route failure.",
         "Flex Phone now waits for SIP registration before treating extension sign-in as complete.",

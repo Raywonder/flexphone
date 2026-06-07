@@ -791,6 +791,26 @@ namespace FlexPhone.Views
 
         private async void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            if (IsMenuInteractionFocused())
+            {
+                return;
+            }
+
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.OemComma)
+            {
+                e.Handled = true;
+                SettingsButton_Click(SettingsButton, new RoutedEventArgs());
+                return;
+            }
+
+            if (e.Key is >= Key.F1 and <= Key.F12
+                && (Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Shift))
+            {
+                e.Handled = true;
+                await RunFunctionKeyActionAsync(e.Key);
+                return;
+            }
+
             if (e.Key == Key.Tab && (Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Shift))
             {
                 e.Handled = true;
@@ -995,6 +1015,64 @@ namespace FlexPhone.Views
             await Task.CompletedTask;
         }
 
+        private async Task RunFunctionKeyActionAsync(Key key)
+        {
+            switch (key)
+            {
+                case Key.F1:
+                    AnswerButton_Click(AnswerButton, new RoutedEventArgs());
+                    break;
+                case Key.F2:
+                    HangupButton_Click(HangupButton, new RoutedEventArgs());
+                    break;
+                case Key.F3:
+                    if (SelectedAccount?.Softphone.ActiveLineState == PbxLineState.Holding)
+                    {
+                        ResumeButton_Click(ResumeButton, new RoutedEventArgs());
+                    }
+                    else
+                    {
+                        HoldButton_Click(HoldButton, new RoutedEventArgs());
+                    }
+                    break;
+                case Key.F4:
+                    TransferButton_Click(TransferButton, new RoutedEventArgs());
+                    break;
+                case Key.F5:
+                    RecordButton_Click(RecordButton, new RoutedEventArgs());
+                    break;
+                case Key.F6:
+                    if (SelectedAccount?.Softphone.IsMuted == true)
+                    {
+                        UnmuteButton_Click(UnmuteButton, new RoutedEventArgs());
+                    }
+                    else
+                    {
+                        MuteButton_Click(MuteButton, new RoutedEventArgs());
+                    }
+                    break;
+                case Key.F7:
+                    QueueToggleButton_Click(QueueToggleButton, new RoutedEventArgs());
+                    break;
+                case Key.F8:
+                    VoicemailButton_Click(VoicemailButton, new RoutedEventArgs());
+                    break;
+                case Key.F9:
+                    MessagesButton_Click(MessagesButton, new RoutedEventArgs());
+                    break;
+                case Key.F10:
+                    PeopleButton_Click(PeopleButton, new RoutedEventArgs());
+                    break;
+                case Key.F11:
+                    DndButton_Click(DndButton, new RoutedEventArgs());
+                    break;
+                case Key.F12:
+                    Log("Toggling call screening.");
+                    await DialFeatureCodeAsync("Call screening", _settings.CallScreeningToggleCode);
+                    break;
+            }
+        }
+
         private async Task HangupActiveOrFirstCallAsync(PbxAccountSession account)
         {
             var line = account.Softphone.Lines.FirstOrDefault(item => item.IsActive && !item.IsFree)
@@ -1105,6 +1183,8 @@ namespace FlexPhone.Views
                 _settings = window.Settings;
                 ServerBox.Text = _settings.DefaultPbxServer;
                 SaveSettings();
+                UnregisterGlobalCallHotKeys();
+                RegisterGlobalCallHotKeys();
                 if (SelectedAccount is { } account
                     && !string.IsNullOrWhiteSpace(_settings.ClientDisplayName)
                     && !string.Equals(previousDisplayName, _settings.ClientDisplayName, StringComparison.Ordinal))
@@ -1804,9 +1884,9 @@ namespace FlexPhone.Views
 
             _hotKeySource = HwndSource.FromHwnd(helper.Handle);
             _hotKeySource?.AddHook(HandleGlobalHotKeyMessage);
-            RegisterHotKey(helper.Handle, HotKeyAnswer, HotKeyModifiers.Control | HotKeyModifiers.Alt, (uint)System.Windows.Forms.Keys.A);
-            RegisterHotKey(helper.Handle, HotKeyDecline, HotKeyModifiers.Control | HotKeyModifiers.Alt, (uint)System.Windows.Forms.Keys.D);
-            RegisterHotKey(helper.Handle, HotKeyHold, HotKeyModifiers.Control | HotKeyModifiers.Alt, (uint)System.Windows.Forms.Keys.H);
+            RegisterConfiguredHotKey(helper.Handle, HotKeyAnswer, _settings.AnswerHotKey, "Ctrl+Shift+A");
+            RegisterConfiguredHotKey(helper.Handle, HotKeyDecline, _settings.HangupHotKey, "Ctrl+Shift+H");
+            RegisterConfiguredHotKey(helper.Handle, HotKeyHold, _settings.HoldHotKey, "Ctrl+Shift+O");
         }
 
         private void UnregisterGlobalCallHotKeys()
@@ -1826,7 +1906,7 @@ namespace FlexPhone.Views
         private IntPtr HandleGlobalHotKeyMessage(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             const int wmHotKey = 0x0312;
-            if (msg != wmHotKey || !IsMinimizedOrHidden())
+            if (msg != wmHotKey)
             {
                 return IntPtr.Zero;
             }
@@ -1835,11 +1915,60 @@ namespace FlexPhone.Views
             _ = wParam.ToInt32() switch
             {
                 HotKeyAnswer => RunIncomingHotKeyActionAsync("Answer", answer: true, holdAfterAnswer: false),
-                HotKeyDecline => RunIncomingHotKeyActionAsync("Decline", answer: false, holdAfterAnswer: false),
+                HotKeyDecline => RunIncomingHotKeyActionAsync("Hang up", answer: false, holdAfterAnswer: false),
                 HotKeyHold => RunIncomingHotKeyActionAsync("Hold incoming", answer: true, holdAfterAnswer: true),
                 _ => Task.CompletedTask
             };
             return IntPtr.Zero;
+        }
+
+        private static void RegisterConfiguredHotKey(IntPtr handle, int id, string configuredHotKey, string fallbackHotKey)
+        {
+            if (!TryParseHotKey(configuredHotKey, out var modifiers, out var key)
+                && !TryParseHotKey(fallbackHotKey, out modifiers, out key))
+            {
+                return;
+            }
+
+            RegisterHotKey(handle, id, modifiers, (uint)key);
+        }
+
+        private static bool TryParseHotKey(string hotKey, out HotKeyModifiers modifiers, out System.Windows.Forms.Keys key)
+        {
+            modifiers = 0;
+            key = System.Windows.Forms.Keys.None;
+            if (string.IsNullOrWhiteSpace(hotKey))
+            {
+                return false;
+            }
+
+            foreach (var rawPart in hotKey.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var part = rawPart.Trim();
+                if (part.Equals("Ctrl", StringComparison.OrdinalIgnoreCase)
+                    || part.Equals("Control", StringComparison.OrdinalIgnoreCase))
+                {
+                    modifiers |= HotKeyModifiers.Control;
+                }
+                else if (part.Equals("Alt", StringComparison.OrdinalIgnoreCase))
+                {
+                    modifiers |= HotKeyModifiers.Alt;
+                }
+                else if (part.Equals("Shift", StringComparison.OrdinalIgnoreCase))
+                {
+                    modifiers |= HotKeyModifiers.Shift;
+                }
+                else if (part.Length == 1 && char.IsLetterOrDigit(part[0]))
+                {
+                    key = Enum.Parse<System.Windows.Forms.Keys>(part.ToUpperInvariant());
+                }
+                else if (Enum.TryParse<System.Windows.Forms.Keys>(part, true, out var parsed))
+                {
+                    key = parsed;
+                }
+            }
+
+            return modifiers != 0 && key != System.Windows.Forms.Keys.None;
         }
 
         private async Task RunIncomingHotKeyActionAsync(string label, bool answer, bool holdAfterAnswer)
@@ -1882,7 +2011,8 @@ namespace FlexPhone.Views
         private enum HotKeyModifiers : uint
         {
             Alt = 0x0001,
-            Control = 0x0002
+            Control = 0x0002,
+            Shift = 0x0004
         }
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -1929,6 +2059,51 @@ namespace FlexPhone.Views
             return Keyboard.FocusedElement is System.Windows.Controls.TextBox
                 or System.Windows.Controls.PasswordBox
                 or System.Windows.Controls.ComboBox;
+        }
+
+        private bool IsMenuInteractionFocused()
+        {
+            if (Keyboard.FocusedElement is not DependencyObject focused)
+            {
+                return false;
+            }
+
+            var current = focused;
+            while (current is not null)
+            {
+                if (ReferenceEquals(current, MainMenu)
+                    || current is MenuItem
+                    || current is System.Windows.Controls.ContextMenu)
+                {
+                    return true;
+                }
+
+                current = GetFocusParent(current);
+            }
+
+            return false;
+        }
+
+        private static DependencyObject? GetFocusParent(DependencyObject current)
+        {
+            if (current is FrameworkElement frameworkElement && frameworkElement.Parent is DependencyObject frameworkParent)
+            {
+                return frameworkParent;
+            }
+
+            if (current is FrameworkContentElement contentElement && contentElement.Parent is DependencyObject contentParent)
+            {
+                return contentParent;
+            }
+
+            try
+            {
+                return System.Windows.Media.VisualTreeHelper.GetParent(current);
+            }
+            catch (InvalidOperationException)
+            {
+                return LogicalTreeHelper.GetParent(current);
+            }
         }
 
         private static bool TryActivateFocusedButton()

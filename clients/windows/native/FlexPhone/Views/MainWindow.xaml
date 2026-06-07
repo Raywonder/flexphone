@@ -56,7 +56,8 @@
                             <MenuItem x:Name="AdminLoginMenuItem" Header="_Admin login page" Click="OpenAdminLoginMenuItem_Click"
                                       AutomationProperties.Name="Admin login page"/>
                         </MenuItem>
-                        <MenuItem Header="_Settings" Click="SettingsButton_Click"
+                        <MenuItem Header="_Settings" InputGestureText="Ctrl+,"
+                                  Click="SettingsButton_Click"
                                   AutomationProperties.Name="Settings"/>
                         <MenuItem x:Name="InstallFullVersionMenuItem" Header="_Install full version" Click="InstallFullVersionMenuItem_Click"
                                   AutomationProperties.Name="Install full version"/>
@@ -71,16 +72,20 @@
                     <MenuItem Header="_Call" AutomationProperties.Name="Call">
                     <MenuItem Header="_Dial" Click="DialButton_Click"
                                   AutomationProperties.Name="Dial"/>
-                        <MenuItem Header="_Pick up" Click="AnswerButton_Click"
+                        <MenuItem Header="_Pick up" InputGestureText="F1, Ctrl+Shift+A"
+                                  Click="AnswerButton_Click"
                                   AutomationProperties.Name="Pick up"/>
-                        <MenuItem Header="_End" InputGestureText="Esc, Esc" Click="HangupButton_Click"
+                        <MenuItem Header="_End" InputGestureText="F2, Ctrl+Shift+H, Esc, Esc" Click="HangupButton_Click"
                                   AutomationProperties.Name="End"/>
                         <Separator/>
-                        <MenuItem Header="_Hold" Click="HoldButton_Click"
+                        <MenuItem Header="_Hold" InputGestureText="F3, Ctrl+Shift+O"
+                                  Click="HoldButton_Click"
                                   AutomationProperties.Name="Hold"/>
-                        <MenuItem Header="_Resume" Click="ResumeButton_Click"
+                        <MenuItem Header="_Resume" InputGestureText="F3"
+                                  Click="ResumeButton_Click"
                                   AutomationProperties.Name="Resume"/>
-                        <MenuItem Header="_Transfer" Click="TransferButton_Click"
+                        <MenuItem Header="_Transfer" InputGestureText="F4"
+                                  Click="TransferButton_Click"
                                   AutomationProperties.Name="Transfer"/>
                         <Separator/>
                         <MenuItem Header="_Mute" Click="MuteButton_Click"

@@ -44,6 +44,9 @@ namespace FlexPhone.Models
         public bool AnnounceCallEnded { get; set; } = true;
         public bool DetailedLineAnnouncements { get; set; } = true;
         public bool ShowKeyboardHints { get; set; } = true;
+        public string AnswerHotKey { get; set; } = "Ctrl+Shift+A";
+        public string HangupHotKey { get; set; } = "Ctrl+Shift+H";
+        public string HoldHotKey { get; set; } = "Ctrl+Shift+O";
         public bool HasSeenGettingStarted { get; set; }
 
         public string EffectiveTurnServer =>

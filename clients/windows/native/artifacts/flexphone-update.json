@@ -1,13 +1,20 @@
 {
-    "version":  "1.0.5.83",
-    "latest_version":  "1.0.5.83",
-    "installer_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.5.exe",
-    "download_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.5.exe",
-    "portable_url":  "/downloads/flexphone/FlexPhone-1.0.5-win-x64-portable.zip",
-    "file_name":  "FlexPhone-Setup-1.0.5.exe",
-    "release_notes":  "Flex Phone 1.0.5.83 adds an optional speech setting that announces when an update is about to install and explains that Flex Phone will restart when installation is complete. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser.",
+    "version":  "1.0.6.84",
+    "latest_version":  "1.0.6.84",
+    "installer_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
+    "download_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
+    "portable_url":  "/downloads/flexphone/FlexPhone-1.0.6-win-x64-portable.zip",
+    "file_name":  "FlexPhone-Setup-1.0.6.exe",
+    "release_notes":  "Flex Phone 1.0.6.84 improves update announcements, settings organization, ringtone previews, menu keyboard behavior, and configurable call hotkeys. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser.",
     "release_notes_list":  [
-                               "A new Updates setting can announce before Flex Phone installs an update and restarts.",
+                               "Flex Phone can announce before it installs an update and restarts.",
+                               "Startup and update settings now live in General settings.",
+                               "Audio-related options, including ringtone selection, now live under Audio settings.",
+                               "Ringtone choices can be previewed from the ringtone list.",
+                               "Ctrl comma opens Settings.",
+                               "A Hotkeys tab lists function-key actions and configurable global call hotkeys.",
+                               "Main window function keys F1 through F12 trigger call actions directly.",
+                               "Menu navigation no longer treats Enter as a dial command while focus is in menus.",
                                "The install announcement is spoken through the existing NVDA and screen reader announcement path when enabled.",
                                "Sign-in now announces the login step, the phone registration step, and any registration timeout or route failure.",
                                "Flex Phone now waits for SIP registration before treating extension sign-in as complete.",
@@ -21,7 +28,7 @@
                                "The Help menu now includes Check for updates now and Check for updates automatically.",
                                "Updater metadata points to the current installer and portable build."
                            ],
-    "checksum":  "9b21772dad60dc39648a5071878df3577c9f3f5a4077a86af92176964c173ae8",
-    "checksum_sha256":  "9b21772dad60dc39648a5071878df3577c9f3f5a4077a86af92176964c173ae8",
-    "portable_checksum_sha256":  "eab8dcd9dc32b7e15fc51f6c7be4ab600abfbaca4eacf35cb9935e3dec060115"
+    "checksum":  "0ce196b73e92484b956799638917e56b212cfeb265a8dfb4b2e7728b2c73767e",
+    "checksum_sha256":  "0ce196b73e92484b956799638917e56b212cfeb265a8dfb4b2e7728b2c73767e",
+    "portable_checksum_sha256":  "8638a07c249ce2cef33bf128d1279ff06f91f0856355390669cd33bf130be210"
 }

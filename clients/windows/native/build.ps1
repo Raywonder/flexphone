@@ -3,8 +3,8 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.0.3",
-    [string]$Build = "53",
+    [string]$Version = "1.0.6",
+    [string]$Build = "84",
     [switch]$Clean,
     [switch]$Publish
 )
