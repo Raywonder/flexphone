@@ -97,6 +97,14 @@
                         <MenuItem Header="Call _screening toggle" InputGestureText="Ctrl+9" Click="CallScreeningMenuItem_Click"
                                   AutomationProperties.Name="Call screening toggle"/>
                     </MenuItem>
+                    <MenuItem x:Name="SipAccountsMenuItem" Header="_SIP Accounts" AutomationProperties.Name="SIP Accounts">
+                        <MenuItem Header="_No SIP accounts signed in" IsEnabled="False"
+                                  AutomationProperties.Name="No SIP accounts signed in"/>
+                    </MenuItem>
+                    <MenuItem Header="_View" AutomationProperties.Name="View">
+                        <MenuItem Header="_Call log" Click="CallLogMenuItem_Click"
+                                  AutomationProperties.Name="Call log"/>
+                    </MenuItem>
                     <MenuItem Header="_Lines" AutomationProperties.Name="Lines">
                         <MenuItem Header="Line _1" InputGestureText="Ctrl+1" Click="LineMenuItem_Click" Tag="1" AutomationProperties.Name="Line 1"/>
                         <MenuItem Header="Line _2" InputGestureText="Ctrl+2" Click="LineMenuItem_Click" Tag="2" AutomationProperties.Name="Line 2"/>
@@ -274,11 +282,16 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
-                <TextBlock x:Name="AccountLabel" Text="Account"/>
-                <ComboBox x:Name="AccountsListBox"
+                    <TextBlock x:Name="CurrentAccountText"
+                               Text="No SIP account selected"
+                               Margin="0,0,0,10"
+                               TextWrapping="Wrap"
+                               AutomationProperties.Name="Current SIP account"/>
+                    <ComboBox x:Name="AccountsListBox"
                               SelectionChanged="AccountsListBox_SelectionChanged"
                               TextSearch.TextPath="DisplayName"
-                              AutomationProperties.LabeledBy="{Binding ElementName=AccountLabel}"
+                              Visibility="Collapsed"
+                              IsTabStop="False"
                               AutomationProperties.Name="Account"
                               AutomationProperties.HelpText="Choose the Flex Phone account to use.">
                     <ComboBox.ItemTemplate>
@@ -380,10 +393,11 @@
                             AutomationProperties.Name="Log out"/>
                 </WrapPanel>
 
-                <GroupBox Header="Call log" Margin="0,10,0,0">
-                    <ListBox x:Name="CallLogList" MinHeight="360"
-                             AutomationProperties.Name="Call log"/>
-                </GroupBox>
+                <TextBlock Text="Call log is available from the View menu."
+                           TextWrapping="Wrap"
+                           Foreground="#b8c1cc"
+                           Margin="0,10,0,0"
+                           AutomationProperties.Name="Call log is available from the View menu."/>
             </StackPanel>
         </Grid>
 

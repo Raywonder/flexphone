@@ -25,6 +25,7 @@ namespace FlexPhone.Views
     {
         private readonly ObservableCollection<PbxAccountSession> _accounts = [];
         private readonly ObservableCollection<LineViewItem> _lineItems = [];
+        private readonly ObservableCollection<CallLogEntry> _callLogEntries = [];
         private readonly FlexPhoneSettingsService _settingsService = new();
         private readonly FlexPhoneCredentialStore _credentialStore = new();
         private readonly FlexPbxClient _pbxClient = new();
@@ -40,6 +41,7 @@ namespace FlexPhone.Views
         private bool _triedRememberedSignIn;
         private bool _updateInstallInProgress;
         private FlexPhoneUpdateManifest? _pendingUpdateManifest;
+        private CallLogWindow? _callLogWindow;
         private string _pendingAuthorizationEmail = "";
         private string _pendingAuthorizationUrl = "";
         private DateTime _lastEscapeAt = DateTime.MinValue;
@@ -337,6 +339,7 @@ namespace FlexPhone.Views
                 RefreshState();
                 _ = TryRunPendingUpdateAfterCallAsync();
             });
+            softphone.Diagnostic += (_, message) => Dispatcher.Invoke(() => Log(message, ClassifyLogMessage(message)));
             softphone.ActiveLineChanged += (_, message) => Dispatcher.Invoke(() =>
             {
                 if (_settings.AnnounceLineChanges)
@@ -450,6 +453,22 @@ namespace FlexPhone.Views
         private async void DialButton_Click(object sender, RoutedEventArgs e)
         {
             await DialSelectedDestinationAsync();
+        }
+
+        private void CallLogMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_callLogWindow is { IsVisible: true })
+            {
+                _callLogWindow.Activate();
+                return;
+            }
+
+            _callLogWindow = new CallLogWindow(_callLogEntries)
+            {
+                Owner = this
+            };
+            _callLogWindow.Closed += (_, _) => _callLogWindow = null;
+            _callLogWindow.Show();
         }
 
         private async void AnswerButton_Click(object sender, RoutedEventArgs e)
@@ -767,6 +786,11 @@ namespace FlexPhone.Views
                 SelectServerPreset(account.Server);
                 ExtensionBox.Text = account.Extension;
                 AutomationProperties.SetName(AccountsListBox, $"Account, {account.DisplayName}");
+                CurrentAccountText.Text = $"SIP account: {account.DisplayName}";
+            }
+            else
+            {
+                CurrentAccountText.Text = "No SIP account selected";
             }
 
             UpdateAccountMenuState();
@@ -838,7 +862,7 @@ namespace FlexPhone.Views
             if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.D9)
             {
                 e.Handled = true;
-                Log("Toggling call screening.");
+                Log("Toggling call screening.", "Calls");
                 await DialFeatureCodeAsync("Call screening", _settings.CallScreeningToggleCode);
                 return;
             }
@@ -1431,14 +1455,71 @@ namespace FlexPhone.Views
             _refreshingLines = false;
         }
 
-        private void Log(string message)
+        private void Log(string message, string? category = null)
         {
-            CallLogList.Items.Insert(0, $"{DateTime.Now:T}  {message}");
-            _announcements.Announce(AnnouncementText, message);
-            while (CallLogList.Items.Count > 120)
+            var entry = new CallLogEntry
             {
-                CallLogList.Items.RemoveAt(CallLogList.Items.Count - 1);
+                Timestamp = DateTime.Now,
+                Category = category ?? ClassifyLogMessage(message),
+                Message = message
+            };
+            _callLogEntries.Insert(0, entry);
+            _announcements.Announce(AnnouncementText, message);
+            while (_callLogEntries.Count > 200)
+            {
+                _callLogEntries.RemoveAt(_callLogEntries.Count - 1);
             }
+        }
+
+        private static string ClassifyLogMessage(string message)
+        {
+            if (message.Contains("failed", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("error", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("could not", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("timed out", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Errors";
+            }
+
+            if (message.Contains("SIP", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("registered", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("registration", StringComparison.OrdinalIgnoreCase))
+            {
+                return "SIP";
+            }
+
+            if (message.Contains("audio", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("microphone", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("speaker", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("ringtone", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Audio";
+            }
+
+            if (message.Contains("call", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("line", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("dial", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("hold", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("transfer", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("queue", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Calls";
+            }
+
+            if (message.Contains("account", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("sign", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("extension", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Accounts";
+            }
+
+            if (message.Contains("update", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("install", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Updates";
+            }
+
+            return "System";
         }
 
         private void ApplySettingsToUi()
@@ -1533,6 +1614,40 @@ namespace FlexPhone.Views
         {
             var role = SelectedAccount?.Role ?? "";
             AdminLoginMenuItem.Visibility = IsAdminRole(role) ? Visibility.Visible : Visibility.Collapsed;
+            SipAccountsMenuItem.Items.Clear();
+            if (_accounts.Count == 0)
+            {
+                SipAccountsMenuItem.Items.Add(new MenuItem
+                {
+                    Header = "_No SIP accounts signed in",
+                    IsEnabled = false
+                });
+                return;
+            }
+
+            foreach (var account in _accounts)
+            {
+                var item = new MenuItem
+                {
+                    Header = account.DisplayName.Replace("_", "__"),
+                    IsCheckable = true,
+                    IsChecked = ReferenceEquals(account, SelectedAccount),
+                    Tag = account
+                };
+                AutomationProperties.SetName(item, $"Use SIP account {account.DisplayName}");
+                item.Click += SipAccountMenuItem_Click;
+                SipAccountsMenuItem.Items.Add(item);
+            }
+        }
+
+        private void SipAccountMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem { Tag: PbxAccountSession account })
+            {
+                AccountsListBox.SelectedItem = account;
+                Log($"Using SIP account {account.DisplayName}.", "Accounts");
+                DestinationBox.Focus();
+            }
         }
 
         private static bool IsAdminRole(string role)

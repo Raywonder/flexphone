@@ -1,14 +1,22 @@
 {
-    "version":  "1.0.6.84",
-    "latest_version":  "1.0.6.84",
+    "version":  "1.0.6.85",
+    "latest_version":  "1.0.6.85",
     "installer_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
     "download_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
     "portable_url":  "/downloads/flexphone/FlexPhone-1.0.6-win-x64-portable.zip",
     "file_name":  "FlexPhone-Setup-1.0.6.exe",
-    "release_notes":  "Flex Phone 1.0.6.84 improves update announcements, settings organization, ringtone previews, menu keyboard behavior, and configurable call hotkeys. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser.",
+    "release_notes":  "Flex Phone 1.0.6.85 improves keyboard navigation, startup controls, account switching, call log filtering, ringtone playback, and SIP/audio diagnostics for call drops and missing incoming audio.",
     "release_notes_list":  [
+                               "Tab and Shift Tab now wrap through the active Flex Phone window instead of getting trapped by the call log.",
+                               "The call log moved to View, Call log, with filters for calls, SIP, audio, errors, accounts, updates, and system messages.",
+                               "SIP account switching moved to the SIP Accounts menu instead of the main dialer controls.",
+                               "The main dialer now keeps focus on calling controls, lines, and keypad actions.",
+                               "Ringtones now play from a local sound cache so WPF resource streams are not closed before playback.",
+                               "SIP registration, media setup, call failure, remote hangup, and incoming-call events are logged under useful filter categories.",
+                               "Failed calls and remote hangups now close stale media sessions.",
+                               "A Startup tab now includes Start Flex Phone when Windows boots.",
                                "Flex Phone can announce before it installs an update and restarts.",
-                               "Startup and update settings now live in General settings.",
+                               "Startup-related settings now live in Startup settings and update settings live in General settings.",
                                "Audio-related options, including ringtone selection, now live under Audio settings.",
                                "Ringtone choices can be previewed from the ringtone list.",
                                "Ctrl comma opens Settings.",
@@ -28,7 +36,7 @@
                                "The Help menu now includes Check for updates now and Check for updates automatically.",
                                "Updater metadata points to the current installer and portable build."
                            ],
-    "checksum":  "0ce196b73e92484b956799638917e56b212cfeb265a8dfb4b2e7728b2c73767e",
-    "checksum_sha256":  "0ce196b73e92484b956799638917e56b212cfeb265a8dfb4b2e7728b2c73767e",
-    "portable_checksum_sha256":  "8638a07c249ce2cef33bf128d1279ff06f91f0856355390669cd33bf130be210"
+    "checksum":  "a6fb22dc1dc6a52e994b75dd9357e5ac0bf65f0fcef62a2069a709a4d9d72ce7",
+    "checksum_sha256":  "a6fb22dc1dc6a52e994b75dd9357e5ac0bf65f0fcef62a2069a709a4d9d72ce7",
+    "portable_checksum_sha256":  "ab251042e386c4c16b877ae3e542646825cc60e4021d816bc80832b7d37d69b2"
 }

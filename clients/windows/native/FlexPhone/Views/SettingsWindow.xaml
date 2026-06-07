@@ -19,16 +19,25 @@
                     <TextBox x:Name="DefaultServerBox" Margin="0,4,0,10"
                              AutomationProperties.Name="Server or provider domain"
                              AutomationProperties.HelpText="Use this only when joining a different Flex PBX server. The normal default is pbx.tappedin.fm; DevineCreations clients can use pbx.devinecreations.net."/>
-                    <CheckBox x:Name="MinimizeToTrayCheckBox" Content="Minimize to system tray"
-                              AutomationProperties.Name="Minimize to system tray"/>
-                    <CheckBox x:Name="StartMinimizedCheckBox" Content="Start minimized to tray" Margin="0,8,0,0"
-                              AutomationProperties.Name="Start minimized to tray"/>
-                    <CheckBox x:Name="CheckUpdatesCheckBox" Content="Check for updates" Margin="0,18,0,0"
+                    <CheckBox x:Name="CheckUpdatesCheckBox" Content="Check for updates" Margin="0,8,0,0"
                               AutomationProperties.Name="Check for updates"/>
                     <CheckBox x:Name="AutoInstallUpdatesCheckBox" Content="Automatically install updates" Margin="0,8,0,0"
                               AutomationProperties.Name="Automatically install updates"/>
                     <CheckBox x:Name="AnnounceUpdateInstallRestartCheckBox" Content="Announce before installing and restarting for updates" Margin="0,8,0,0"
                               AutomationProperties.Name="Announce before installing and restarting for updates"/>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Startup">
+                <StackPanel Margin="12">
+                    <CheckBox x:Name="StartWithWindowsCheckBox" Content="Start Flex Phone when Windows boots"
+                              AutomationProperties.Name="Start Flex Phone when Windows boots"
+                              AutomationProperties.HelpText="When enabled, Flex Phone starts automatically after you sign in to Windows."/>
+                    <CheckBox x:Name="MinimizeToTrayCheckBox" Content="Minimize to system tray"
+                              Margin="0,12,0,0"
+                              AutomationProperties.Name="Minimize to system tray"/>
+                    <CheckBox x:Name="StartMinimizedCheckBox" Content="Start minimized to tray" Margin="0,8,0,0"
+                              AutomationProperties.Name="Start minimized to tray"/>
                 </StackPanel>
             </TabItem>
 

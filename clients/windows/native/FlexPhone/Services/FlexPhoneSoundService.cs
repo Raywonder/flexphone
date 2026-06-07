@@ -1,3 +1,4 @@
+using System.IO;
 using System.Media;
 using System.Windows;
 
@@ -5,6 +6,7 @@ namespace FlexPhone.Services
 {
     public sealed class FlexPhoneSoundService
     {
+        private static readonly object CacheSync = new();
         private static readonly Dictionary<string, string> RingtoneFiles = new(StringComparer.OrdinalIgnoreCase)
         {
             ["Incoming call"] = "Ringtones/ringtone-incoming-call.wav",
@@ -89,10 +91,10 @@ namespace FlexPhone.Services
         {
             try
             {
-                var resource = System.Windows.Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/Sounds/{fileName}", UriKind.Absolute));
-                if (resource?.Stream is not null)
+                var cachedPath = CachedSoundPath(fileName);
+                if (!string.IsNullOrWhiteSpace(cachedPath))
                 {
-                    using var player = new SoundPlayer(resource.Stream);
+                    var player = new SoundPlayer(cachedPath);
                     player.Load();
                     player.Play();
                     return true;
@@ -105,6 +107,34 @@ namespace FlexPhone.Services
 
             fallback?.Play();
             return false;
+        }
+
+        private static string CachedSoundPath(string fileName)
+        {
+            lock (CacheSync)
+            {
+                var safeRelativePath = fileName.Replace('/', Path.DirectorySeparatorChar);
+                var cachePath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "FlexPhone",
+                    "SoundCache",
+                    safeRelativePath);
+                if (File.Exists(cachePath))
+                {
+                    return cachePath;
+                }
+
+                var resource = System.Windows.Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/Sounds/{fileName}", UriKind.Absolute));
+                if (resource?.Stream is null)
+                {
+                    return "";
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                using var output = File.Create(cachePath);
+                resource.Stream.CopyTo(output);
+                return cachePath;
+            }
         }
     }
 }

@@ -24,6 +24,7 @@ namespace FlexPhone.Views
                 CustomTurnServer = settings.CustomTurnServer,
                 MinimizeToTray = settings.MinimizeToTray,
                 StartMinimizedToTray = settings.StartMinimizedToTray,
+                StartWithWindows = settings.StartWithWindows,
                 RememberSignIn = settings.RememberSignIn,
                 PlayCallSounds = settings.PlayCallSounds,
                 IncomingRingtone = settings.IncomingRingtone,
@@ -86,6 +87,7 @@ namespace FlexPhone.Views
             SelectComboText(IncomingRingtoneComboBox, Settings.IncomingRingtone);
             MinimizeToTrayCheckBox.IsChecked = Settings.MinimizeToTray;
             StartMinimizedCheckBox.IsChecked = Settings.StartMinimizedToTray;
+            StartWithWindowsCheckBox.IsChecked = Settings.StartWithWindows || WindowsStartupService.IsEnabled();
             CheckUpdatesCheckBox.IsChecked = Settings.CheckForUpdates;
             AutoInstallUpdatesCheckBox.IsChecked = Settings.AutomaticallyInstallUpdates;
             AnnounceUpdateInstallRestartCheckBox.IsChecked = Settings.AnnounceUpdateInstallRestart;
@@ -139,6 +141,7 @@ namespace FlexPhone.Views
             Settings.IncomingRingtone = FirstText(IncomingRingtoneComboBox.Text, "Incoming call");
             Settings.MinimizeToTray = MinimizeToTrayCheckBox.IsChecked == true;
             Settings.StartMinimizedToTray = StartMinimizedCheckBox.IsChecked == true;
+            Settings.StartWithWindows = StartWithWindowsCheckBox.IsChecked == true;
             Settings.CheckForUpdates = CheckUpdatesCheckBox.IsChecked == true;
             Settings.AutomaticallyInstallUpdates = AutoInstallUpdatesCheckBox.IsChecked == true;
             Settings.AnnounceUpdateInstallRestart = AnnounceUpdateInstallRestartCheckBox.IsChecked == true;

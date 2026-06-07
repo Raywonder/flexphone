@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Version = "1.0.6",
-    [string]$Build = "84",
+    [string]$Build = "85",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -53,6 +53,8 @@ Copy-Item -LiteralPath $installerPath -Destination (Join-Path $OutputDir $instal
 $installerHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installerPath).Hash.ToLowerInvariant()
 $portableHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $portablePath).Hash.ToLowerInvariant()
 $manifestPath = Join-Path $artifactsDir "flexphone-update.json"
+$legacyManifestPath = Join-Path $artifactsDir "update.json"
+$checksumsPath = Join-Path $artifactsDir "SHA256SUMS.txt"
 $manifest = [ordered]@{
     version = "$Version.$Build"
     latest_version = "$Version.$Build"
@@ -60,10 +62,18 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build improves update announcements, settings organization, ringtone previews, menu keyboard behavior, and configurable call hotkeys. It keeps the recent extension sign-in feedback, SIP registration wait, NVDA announcement library, and TappedIn and DevineCreations PBX domain chooser."
+    release_notes = "Flex Phone $Version.$Build improves keyboard navigation, startup controls, account switching, call log filtering, ringtone playback, and SIP/audio diagnostics for call drops and missing incoming audio."
     release_notes_list = @(
+        "Tab and Shift Tab now wrap through the active Flex Phone window instead of getting trapped by the call log.",
+        "The call log moved to View, Call log, with filters for calls, SIP, audio, errors, accounts, updates, and system messages.",
+        "SIP account switching moved to the SIP Accounts menu instead of the main dialer controls.",
+        "The main dialer now keeps focus on calling controls, lines, and keypad actions.",
+        "Ringtones now play from a local sound cache so WPF resource streams are not closed before playback.",
+        "SIP registration, media setup, call failure, remote hangup, and incoming-call events are logged under useful filter categories.",
+        "Failed calls and remote hangups now close stale media sessions.",
+        "A Startup tab now includes Start Flex Phone when Windows boots.",
         "Flex Phone can announce before it installs an update and restarts.",
-        "Startup and update settings now live in General settings.",
+        "Startup-related settings now live in Startup settings and update settings live in General settings.",
         "Audio-related options, including ringtone selection, now live under Audio settings.",
         "Ringtone choices can be previewed from the ringtone list.",
         "Ctrl comma opens Settings.",
@@ -92,6 +102,17 @@ $manifest = [ordered]@{
     ($manifest | ConvertTo-Json -Depth 4),
     [System.Text.UTF8Encoding]::new($false))
 Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $OutputDir "flexphone-update.json") -Force
+Copy-Item -LiteralPath $manifestPath -Destination $legacyManifestPath -Force
+Copy-Item -LiteralPath $legacyManifestPath -Destination (Join-Path $OutputDir "update.json") -Force
+
+$manifestHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manifestPath).Hash.ToLowerInvariant()
+$checksumLines = @(
+    "$installerHash  $installerName",
+    "$portableHash  $portableName",
+    "$manifestHash  flexphone-update.json"
+)
+[System.IO.File]::WriteAllLines($checksumsPath, $checksumLines, [System.Text.UTF8Encoding]::new($false))
+Copy-Item -LiteralPath $checksumsPath -Destination (Join-Path $OutputDir "SHA256SUMS.txt") -Force
 
 Write-Host "Installer: $installerPath"
 Write-Host "Portable: $portablePath"

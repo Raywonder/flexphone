@@ -8,6 +8,7 @@ namespace FlexPhone.Models
         public string CustomTurnServer { get; set; } = "";
         public bool MinimizeToTray { get; set; } = true;
         public bool StartMinimizedToTray { get; set; }
+        public bool StartWithWindows { get; set; }
         public bool RememberSignIn { get; set; } = true;
         public bool PlayCallSounds { get; set; } = true;
         public string IncomingRingtone { get; set; } = "Incoming call";

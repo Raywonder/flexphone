@@ -44,6 +44,7 @@ namespace FlexPhone.Services
         {
             var normalized = Normalize(settings);
             File.WriteAllText(_settingsPath, JsonSerializer.Serialize(normalized, _jsonOptions));
+            WindowsStartupService.Apply(normalized.StartWithWindows);
         }
 
         private static FlexPhoneSettings Normalize(FlexPhoneSettings settings)

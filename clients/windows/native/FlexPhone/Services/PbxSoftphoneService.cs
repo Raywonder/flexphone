@@ -74,6 +74,7 @@ namespace FlexPhone.Services
         public event EventHandler<string>? RegistrationSucceeded;
         public event EventHandler<string>? LineFreed;
         public event EventHandler<string>? ActiveLineChanged;
+        public event EventHandler<string>? Diagnostic;
 
         public Task StartAsync(int localPort = 5066)
         {
@@ -85,6 +86,7 @@ namespace FlexPhone.Services
             _sipTransport = new SIPTransport();
             _sipTransport.AddSIPChannel(new SIPUDPChannel(new IPEndPoint(IPAddress.Any, localPort)));
             _sipTransport.AddSIPChannel(new SIPTCPChannel(new IPEndPoint(IPAddress.Any, localPort)));
+            Diagnostic?.Invoke(this, $"SIP transport listening on UDP and TCP port {localPort}.");
             foreach (var line in _lines)
             {
                 line.UserAgent = CreateUserAgent(line.Snapshot.LineNumber);
@@ -141,10 +143,12 @@ namespace FlexPhone.Services
                 IsRegistered = false;
                 lastRegistrationError = error?.ToString();
                 RegistrationStatus = $"Registration retrying: {lastRegistrationError}";
+                Diagnostic?.Invoke(this, RegistrationStatus);
                 RaiseStateChanged();
             };
             _registration.Start();
             RegistrationStatus = $"Registering {extension} on {registrar}";
+            Diagnostic?.Invoke(this, RegistrationStatus);
             RaiseStateChanged();
 
             try
@@ -240,11 +244,14 @@ namespace FlexPhone.Services
             line.UserAgent = CreateUserAgent(lineNumber);
             line.UserAgent.OnIncomingCall += OnIncomingCall;
             line.MediaSession = CreateMediaSession();
+            Diagnostic?.Invoke(this, $"Dialing line {lineNumber} to {dst} using audio endpoint.");
             var result = await line.UserAgent.Call($"sip:{dst}", extension, password, line.MediaSession);
 
             SetLine(lineNumber, result ? PbxLineState.Connected : PbxLineState.Failed, dst, result ? $"Connected to {dst}" : "Call failed");
             if (!result)
             {
+                line.MediaSession?.Close("call failed");
+                line.MediaSession = null;
                 LineFreed?.Invoke(this, $"Line {lineNumber} is free after a failed call.");
             }
         }
@@ -259,9 +266,15 @@ namespace FlexPhone.Services
 
             await SelectLineAsync(line.Snapshot.LineNumber);
             line.MediaSession = CreateMediaSession();
+            Diagnostic?.Invoke(this, $"Answering line {line.Snapshot.LineNumber} using audio endpoint.");
             var result = await line.UserAgent!.Answer(line.PendingIncomingCall, line.MediaSession);
             line.PendingIncomingCall = null;
             SetLine(line.Snapshot.LineNumber, result ? PbxLineState.Connected : PbxLineState.Failed, line.Snapshot.RemoteParty, result ? "Connected" : "Answer failed");
+            if (!result)
+            {
+                line.MediaSession?.Close("answer failed");
+                line.MediaSession = null;
+            }
         }
 
         public Task HangupAsync()
@@ -387,12 +400,18 @@ namespace FlexPhone.Services
             userAgent.ClientCallFailed += (_, error, _) =>
             {
                 var line = _lines[lineNumber - 1];
+                Diagnostic?.Invoke(this, $"Line {lineNumber} call failed: {error}");
+                line.MediaSession?.Close("client call failed");
+                line.MediaSession = null;
                 SetLine(lineNumber, PbxLineState.Failed, line.Snapshot.RemoteParty, $"Call failed: {error}");
                 LineFreed?.Invoke(this, $"Line {lineNumber} is free after a failed call.");
             };
             userAgent.OnCallHungup += _ =>
             {
                 var line = _lines[lineNumber - 1];
+                Diagnostic?.Invoke(this, $"Line {lineNumber} call hung up by remote or PBX.");
+                line.MediaSession?.Close("remote hangup");
+                line.MediaSession = null;
                 line.IsMuted = false;
                 line.MuteAudioSource = null;
                 SetLine(lineNumber, PbxLineState.Ended, line.Snapshot.RemoteParty, "Ended");
@@ -404,6 +423,7 @@ namespace FlexPhone.Services
         private VoIPMediaSession CreateMediaSession()
         {
             var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
+            Diagnostic?.Invoke(this, "Created Windows audio endpoint for microphone and speaker routing.");
             return new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
         }
 
@@ -415,6 +435,7 @@ namespace FlexPhone.Services
             line.UserAgent = userAgent;
             line.PendingIncomingCall = userAgent.AcceptCall(request);
             var remote = request.Header.From?.FromURI?.User ?? request.Header.From?.FromName ?? "Unknown caller";
+            Diagnostic?.Invoke(this, $"Incoming SIP call on line {lineNumber} from {remote}.");
             SetLine(lineNumber, PbxLineState.Ringing, remote, $"Incoming call from {remote}");
             IncomingCall?.Invoke(this, $"Line {lineNumber} from {remote}");
         }
