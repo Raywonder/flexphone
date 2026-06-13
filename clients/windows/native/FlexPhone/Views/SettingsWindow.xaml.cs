@@ -288,8 +288,16 @@ namespace FlexPhone.Views
 
         private void LoadAudioDeviceChoices()
         {
-            InputAudioDeviceComboBox.Items.Add("Default communications microphone");
-            OutputAudioDeviceComboBox.Items.Add("Default communications speaker");
+            InputAudioDeviceComboBox.Items.Clear();
+            OutputAudioDeviceComboBox.Items.Clear();
+            foreach (var device in WindowsAudioDeviceService.CaptureDevices())
+            {
+                InputAudioDeviceComboBox.Items.Add(device);
+            }
+            foreach (var device in WindowsAudioDeviceService.RenderDevices())
+            {
+                OutputAudioDeviceComboBox.Items.Add(device);
+            }
         }
 
         private void LoadRingtoneChoices()
@@ -310,7 +318,7 @@ namespace FlexPhone.Views
         {
             if (_previewRingtones && IncomingRingtoneComboBox.SelectedItem?.ToString() is { Length: > 0 } ringtone)
             {
-                _sounds.PreviewRingtone(ringtone);
+                _sounds.PreviewRingtone(ringtone, OutputAudioDeviceComboBox.Text);
             }
         }
 

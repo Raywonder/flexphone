@@ -42,6 +42,7 @@ namespace FlexPhone.Views
         private bool _updateInstallInProgress;
         private FlexPhoneUpdateManifest? _pendingUpdateManifest;
         private CallLogWindow? _callLogWindow;
+        private IncomingCallWindow? _incomingCallWindow;
         private string _pendingAuthorizationEmail = "";
         private string _pendingAuthorizationUrl = "";
         private DateTime _lastEscapeAt = DateTime.MinValue;
@@ -74,6 +75,7 @@ namespace FlexPhone.Views
             NotifyPendingUpdateSuccess();
             RefreshState();
             Loaded += MainWindow_Loaded;
+            PreviewKeyDown += MainWindow_PreviewKeyDown;
             _ = CheckForUpdatesInBackgroundAsync(interactive: false);
 
             if (_settings.StartMinimizedToTray && _settings.MinimizeToTray)
@@ -94,7 +96,7 @@ namespace FlexPhone.Views
         protected override void OnSourceInitialized(EventArgs e)
         {
             base.OnSourceInitialized(e);
-            RegisterGlobalCallHotKeys();
+            UnregisterGlobalCallHotKeys();
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -313,7 +315,7 @@ namespace FlexPhone.Views
                 _accounts.Remove(selected);
             }
 
-            var softphone = new PbxSoftphoneService();
+            var softphone = new PbxSoftphoneService(_settings.InputAudioDevice, _settings.OutputAudioDevice);
             var displayName = FirstText(_settings.ClientDisplayName, login.FullName);
             var account = new PbxAccountSession
             {
@@ -364,11 +366,16 @@ namespace FlexPhone.Views
             softphone.IncomingCall += async (_, caller) => await Dispatcher.InvokeAsync(async () =>
             {
                 Log($"Incoming call for {account.DisplayName} from {caller}");
-                _sounds.PlayIncomingRing(_settings.PlayCallSounds, _settings.IncomingRingtone);
+                _sounds.PlayIncomingRing(_settings.PlayCallSounds, _settings.IncomingRingtone, _settings.OutputAudioDevice);
                 ShowFlexPhoneNotification("Incoming call", $"Call from {caller}", ToolTipIcon.Info);
                 if (_settings.AutoAnswer && !_dndEnabled)
                 {
                     await RunActionAsync("Auto-answer", () => softphone.AnswerAsync(), softphone);
+                    CloseIncomingCallWindow();
+                }
+                else
+                {
+                    ShowIncomingCallWindow(account, caller);
                 }
             });
 
@@ -619,6 +626,13 @@ namespace FlexPhone.Views
         private async void VoicemailButton_Click(object sender, RoutedEventArgs e)
         {
             await DialFeatureCodeAsync("Voicemail", _settings.VoicemailCode);
+        }
+
+        private async Task SendIncomingCallToVoicemailAsync(PbxAccountSession account)
+        {
+            await RunActionAsync("Send to voicemail", () => account.Softphone.HangupAsync(), account.Softphone);
+            _sounds.PlayCallEnded(_settings.PlayCallSounds);
+            CloseIncomingCallWindow();
         }
 
         private void MessagesButton_Click(object sender, RoutedEventArgs e)
@@ -1208,7 +1222,6 @@ namespace FlexPhone.Views
                 ServerBox.Text = _settings.DefaultPbxServer;
                 SaveSettings();
                 UnregisterGlobalCallHotKeys();
-                RegisterGlobalCallHotKeys();
                 if (SelectedAccount is { } account
                     && !string.IsNullOrWhiteSpace(_settings.ClientDisplayName)
                     && !string.Equals(previousDisplayName, _settings.ClientDisplayName, StringComparison.Ordinal))
@@ -1221,6 +1234,40 @@ namespace FlexPhone.Views
                 UpdateProvisioningLink();
                 RefreshState();
                 UpdateAccountMenuState();
+            }
+        }
+
+        private async void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (!IsActive || e.IsRepeat)
+            {
+                return;
+            }
+
+            var hotKey = HotKeyText(e);
+            if (string.IsNullOrWhiteSpace(hotKey))
+            {
+                return;
+            }
+
+            if (HotKeyMatches(hotKey, _settings.AnswerHotKey, "Ctrl+Shift+A"))
+            {
+                e.Handled = true;
+                await RunIncomingHotKeyActionAsync("Answer", answer: true, holdAfterAnswer: false);
+                return;
+            }
+
+            if (HotKeyMatches(hotKey, _settings.HangupHotKey, "Ctrl+Shift+H"))
+            {
+                e.Handled = true;
+                await RunIncomingHotKeyActionAsync("Hang up", answer: false, holdAfterAnswer: false);
+                return;
+            }
+
+            if (HotKeyMatches(hotKey, _settings.HoldHotKey, "Ctrl+Shift+O"))
+            {
+                e.Handled = true;
+                await RunIncomingHotKeyActionAsync("Hold incoming", answer: true, holdAfterAnswer: true);
             }
         }
 
@@ -1989,6 +2036,59 @@ namespace FlexPhone.Views
             Activate();
         }
 
+        private void ShowIncomingCallWindow(PbxAccountSession account, string caller)
+        {
+            RestoreFromTray();
+
+            if (_incomingCallWindow is { IsVisible: true })
+            {
+                _incomingCallWindow.UpdateCall(account.DisplayName, caller, () => account.Softphone.HasIncomingCall);
+                _incomingCallWindow.Activate();
+                return;
+            }
+
+            _incomingCallWindow = new IncomingCallWindow(
+                account.DisplayName,
+                caller,
+                () => account.Softphone.HasIncomingCall,
+                async () => await RunIncomingHotKeyActionAsync("Answer", answer: true, holdAfterAnswer: false),
+                async () => await RunIncomingHotKeyActionAsync("Decline", answer: false, holdAfterAnswer: false),
+                async () => await SendIncomingCallToVoicemailAsync(account),
+                async destination =>
+                {
+                    if (string.IsNullOrWhiteSpace(destination))
+                    {
+                        Log("Transfer destination is required.");
+                        return;
+                    }
+
+                    if (account.Softphone.HasIncomingCall)
+                    {
+                        await RunActionAsync("Answer for transfer", () => account.Softphone.AnswerAsync(), account.Softphone);
+                        await Task.Delay(500);
+                    }
+
+                    await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, destination), account.Softphone);
+                    CloseIncomingCallWindow();
+                })
+            {
+                Owner = this
+            };
+            _incomingCallWindow.Closed += (_, _) => _incomingCallWindow = null;
+            _incomingCallWindow.Show();
+            _incomingCallWindow.Activate();
+        }
+
+        private void CloseIncomingCallWindow()
+        {
+            if (_incomingCallWindow is { IsVisible: true })
+            {
+                _incomingCallWindow.Close();
+            }
+
+            _incomingCallWindow = null;
+        }
+
         private void RegisterGlobalCallHotKeys()
         {
             var helper = new WindowInteropHelper(this);
@@ -2086,6 +2186,63 @@ namespace FlexPhone.Views
             return modifiers != 0 && key != System.Windows.Forms.Keys.None;
         }
 
+        private static bool HotKeyMatches(string actualHotKey, string configuredHotKey, string fallbackHotKey)
+        {
+            return HotKeyTextMatches(actualHotKey, configuredHotKey)
+                || HotKeyTextMatches(actualHotKey, fallbackHotKey);
+        }
+
+        private static bool HotKeyTextMatches(string actualHotKey, string configuredHotKey)
+        {
+            return !string.IsNullOrWhiteSpace(configuredHotKey)
+                && string.Equals(NormalizeHotKeyText(actualHotKey), NormalizeHotKeyText(configuredHotKey), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeHotKeyText(string hotKey)
+        {
+            return hotKey.Replace("Control", "Ctrl", StringComparison.OrdinalIgnoreCase)
+                .Replace(" ", "", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string HotKeyText(System.Windows.Input.KeyEventArgs e)
+        {
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (key == Key.None
+                || key == Key.LeftCtrl
+                || key == Key.RightCtrl
+                || key == Key.LeftShift
+                || key == Key.RightShift
+                || key == Key.LeftAlt
+                || key == Key.RightAlt)
+            {
+                return "";
+            }
+
+            var parts = new List<string>();
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                parts.Add("Ctrl");
+            }
+
+            if ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
+            {
+                parts.Add("Alt");
+            }
+
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            {
+                parts.Add("Shift");
+            }
+
+            if (parts.Count == 0)
+            {
+                return "";
+            }
+
+            parts.Add(key.ToString().ToUpperInvariant());
+            return string.Join("+", parts);
+        }
+
         private async Task RunIncomingHotKeyActionAsync(string label, bool answer, bool holdAfterAnswer)
         {
             var account = _accounts.FirstOrDefault(item => item.Softphone.HasIncomingCall)
@@ -2098,12 +2255,24 @@ namespace FlexPhone.Views
 
             try
             {
+                var hasIncomingCall = account.Softphone.HasIncomingCall;
                 if (answer)
                 {
-                    await RunActionAsync(label, () => account.Softphone.AnswerAsync(), account.Softphone);
-                    if (holdAfterAnswer)
+                    if (hasIncomingCall)
+                    {
+                        await RunActionAsync(label, () => account.Softphone.AnswerAsync(), account.Softphone);
+                        if (holdAfterAnswer)
+                        {
+                            await RunActionAsync("Hold", () => account.Softphone.HoldAsync(), account.Softphone);
+                        }
+                    }
+                    else if (holdAfterAnswer)
                     {
                         await RunActionAsync("Hold", () => account.Softphone.HoldAsync(), account.Softphone);
+                    }
+                    else
+                    {
+                        ShowFlexPhoneNotification("Flex Phone", "There is no incoming call waiting.", ToolTipIcon.Info);
                     }
                 }
                 else
@@ -2114,6 +2283,14 @@ namespace FlexPhone.Views
             catch (Exception ex)
             {
                 Log($"{label} hotkey failed: {ex.Message}");
+            }
+            finally
+            {
+                RefreshState();
+                if (!_accounts.Any(item => item.Softphone.HasIncomingCall))
+                {
+                    CloseIncomingCallWindow();
+                }
             }
         }
 
@@ -2556,17 +2733,10 @@ namespace FlexPhone.Views
             }
 
             dialog.ShowDialog();
-            if (dialog.Decision == UpdateWindowDecision.Postpone)
-            {
-                _settings.UpdatePostponeCount++;
-                _settings.UpdatePostponedUntil = DateTime.Now.Add(dialog.PostponeFor);
-                _settingsService.Save(_settings);
-                Log($"Update postponed until {_settings.UpdatePostponedUntil:g}.");
-                ShowFlexPhoneNotification("Flex Phone Update", $"Update postponed until {_settings.UpdatePostponedUntil:g}.", ToolTipIcon.Info);
-                return;
-            }
 
-            if (dialog.Decision == UpdateWindowDecision.Install)
+            if (manifest.Critical
+                || _settings.AutomaticallyInstallUpdates
+                || _settings.UpdatePostponeCount >= MaxUpdatePostpones)
             {
                 _settings.UpdatePostponeCount = 0;
                 _settings.UpdatePostponedUntil = DateTime.MinValue;

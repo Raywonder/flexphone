@@ -4,7 +4,7 @@
 param(
     [string]$Configuration = "Release",
     [string]$Version = "1.0.6",
-    [string]$Build = "85",
+    [string]$Build = "86",
     [switch]$Clean,
     [switch]$Publish
 )

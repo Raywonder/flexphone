@@ -14,8 +14,8 @@
         <Copyright>Copyright 2024-2025 Devine Creations</Copyright>
         <Version>1.0.6</Version>
         <AssemblyVersion>1.0.6.0</AssemblyVersion>
-        <FileVersion>1.0.6.85</FileVersion>
-        <InformationalVersion>1.0.6+85</InformationalVersion>
+        <FileVersion>1.0.6.86</FileVersion>
+        <InformationalVersion>1.0.6+86</InformationalVersion>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
     </PropertyGroup>
     <ItemGroup>
@@ -25,6 +25,7 @@
         <PackageReference Include="SocketIOClient" Version="3.1.1" />
         <PackageReference Include="SIPSorcery" Version="10.0.6" />
         <PackageReference Include="SIPSorceryMedia.Windows" Version="8.0.14" />
+        <PackageReference Include="NAudio" Version="2.2.1" />
         <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     </ItemGroup>
     <ItemGroup>

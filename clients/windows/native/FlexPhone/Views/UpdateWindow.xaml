@@ -1,7 +1,7 @@
 <Window x:Class="FlexPhone.Views.UpdateWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Flex Phone Update" Height="520" Width="640"
+        Title="Flex Phone Update" Height="460" Width="640"
         MinHeight="420" MinWidth="540"
         WindowStartupLocation="CenterOwner"
         Background="#101418" Foreground="#f7f7f7"
@@ -11,7 +11,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock x:Name="SummaryText" Grid.Row="0" Margin="0,0,0,12"
@@ -19,49 +18,24 @@
                    AutomationProperties.Name="Update summary"
                    AutomationProperties.LiveSetting="Polite"/>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.2*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      AutomationProperties.Name="Update information">
+            <TextBlock x:Name="UpdateInfoText"
+                       TextWrapping="Wrap"
+                       AutomationProperties.Name="Flex Phone update information"/>
+        </ScrollViewer>
 
-            <GroupBox Header="Update notes" Margin="0,0,10,0">
-                <ListBox x:Name="NotesList"
-                         AutomationProperties.Name="Update notes"/>
-            </GroupBox>
-
-            <GroupBox Grid.Column="1" Header="Links">
-                <ListBox x:Name="LinksList"
-                         MouseDoubleClick="LinksList_MouseDoubleClick"
-                         AutomationProperties.Name="Update links"
-                         AutomationProperties.HelpText="Select a link and press Open link, or double-click it.">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap"/>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </GroupBox>
-        </Grid>
-
-        <StackPanel Grid.Row="2" Margin="0,12,0,0">
-            <TextBlock Text="Postpone for"/>
-            <ComboBox x:Name="PostponeComboBox" Margin="0,4,0,0"
-                      AutomationProperties.Name="Postpone update for">
-                <ComboBoxItem Content="15 minutes"/>
-                <ComboBoxItem Content="1 hour"/>
-                <ComboBoxItem Content="4 hours"/>
-                <ComboBoxItem Content="Tomorrow"/>
-            </ComboBox>
-        </StackPanel>
-
-        <WrapPanel Grid.Row="3" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="Open link" Click="OpenLinkButton_Click" MinWidth="92" Margin="0,0,8,0"
-                    AutomationProperties.Name="Open selected link"/>
-            <Button x:Name="PostponeButton" Content="Postpone" Click="PostponeButton_Click" MinWidth="92" Margin="0,0,8,0"
-                    AutomationProperties.Name="Postpone update"/>
-            <Button Content="Update now" Click="UpdateNowButton_Click" MinWidth="92"
-                    AutomationProperties.Name="Update now"/>
-        </WrapPanel>
+        <Button Grid.Row="2"
+                x:Name="OkButton"
+                Content="OK"
+                Click="OkButton_Click"
+                IsDefault="True"
+                IsCancel="True"
+                MinWidth="92"
+                HorizontalAlignment="Right"
+                Margin="0,12,0,0"
+                AutomationProperties.Name="OK"/>
     </Grid>
 </Window>

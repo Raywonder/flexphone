@@ -37,10 +37,14 @@ namespace FlexPhone.Services
         private SIPRegistrationUserAgent? _registration;
         private int _activeLine = 1;
         private bool _disposed;
+        private readonly string? _inputAudioDevice;
+        private readonly string? _outputAudioDevice;
         private static readonly TimeSpan RegistrationWaitTimeout = TimeSpan.FromSeconds(18);
 
-        public PbxSoftphoneService()
+        public PbxSoftphoneService(string? inputAudioDevice = null, string? outputAudioDevice = null)
         {
+            _inputAudioDevice = inputAudioDevice;
+            _outputAudioDevice = outputAudioDevice;
             for (var i = 1; i <= 8; i++)
             {
                 _lines.Add(new LineRuntime(i));
@@ -422,9 +426,16 @@ namespace FlexPhone.Services
 
         private VoIPMediaSession CreateMediaSession()
         {
-            var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder());
-            Diagnostic?.Invoke(this, "Created Windows audio endpoint for microphone and speaker routing.");
+            var outputIndex = WindowsAudioDeviceService.RenderDeviceIndex(_outputAudioDevice);
+            var inputIndex = WindowsAudioDeviceService.CaptureDeviceIndex(_inputAudioDevice);
+            var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), outputIndex, inputIndex);
+            Diagnostic?.Invoke(this, $"Created Windows audio endpoint for microphone '{AudioDeviceLabel(_inputAudioDevice)}' and speaker '{AudioDeviceLabel(_outputAudioDevice)}'.");
             return new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
+        }
+
+        private static string AudioDeviceLabel(string? deviceName)
+        {
+            return string.IsNullOrWhiteSpace(deviceName) ? "default" : deviceName.Trim();
         }
 
         private void OnIncomingCall(SIPUserAgent userAgent, SIPRequest request)

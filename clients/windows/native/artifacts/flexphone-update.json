@@ -1,11 +1,11 @@
 {
-    "version":  "1.0.6.85",
-    "latest_version":  "1.0.6.85",
+    "version":  "1.0.6.86",
+    "latest_version":  "1.0.6.86",
     "installer_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
     "download_url":  "/downloads/flexphone/FlexPhone-Setup-1.0.6.exe",
     "portable_url":  "/downloads/flexphone/FlexPhone-1.0.6-win-x64-portable.zip",
     "file_name":  "FlexPhone-Setup-1.0.6.exe",
-    "release_notes":  "Flex Phone 1.0.6.85 improves keyboard navigation, startup controls, account switching, call log filtering, ringtone playback, and SIP/audio diagnostics for call drops and missing incoming audio.",
+    "release_notes":  "Flex Phone 1.0.6.86 improves keyboard navigation, startup controls, account switching, call log filtering, ringtone playback, and SIP/audio diagnostics for call drops and missing incoming audio.",
     "release_notes_list":  [
                                "Tab and Shift Tab now wrap through the active Flex Phone window instead of getting trapped by the call log.",
                                "The call log moved to View, Call log, with filters for calls, SIP, audio, errors, accounts, updates, and system messages.",
@@ -36,7 +36,7 @@
                                "The Help menu now includes Check for updates now and Check for updates automatically.",
                                "Updater metadata points to the current installer and portable build."
                            ],
-    "checksum":  "a6fb22dc1dc6a52e994b75dd9357e5ac0bf65f0fcef62a2069a709a4d9d72ce7",
-    "checksum_sha256":  "a6fb22dc1dc6a52e994b75dd9357e5ac0bf65f0fcef62a2069a709a4d9d72ce7",
-    "portable_checksum_sha256":  "ab251042e386c4c16b877ae3e542646825cc60e4021d816bc80832b7d37d69b2"
+    "checksum":  "ad21bcc7a6c71b1f7d386422d638d46bcd9a169f1ae9432abc9c9dff506fba43",
+    "checksum_sha256":  "ad21bcc7a6c71b1f7d386422d638d46bcd9a169f1ae9432abc9c9dff506fba43",
+    "portable_checksum_sha256":  "1e585c0000917816603008ecc4c4e3f76af0b40624189f7ec30f8b1d96f36aaa"
 }

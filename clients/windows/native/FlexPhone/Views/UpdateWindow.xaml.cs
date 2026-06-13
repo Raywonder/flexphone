@@ -1,7 +1,5 @@
-using System.Diagnostics;
+using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 using FlexPhone.Services;
 
 namespace FlexPhone.Views
@@ -10,7 +8,8 @@ namespace FlexPhone.Views
     {
         None,
         Install,
-        Postpone
+        Postpone,
+        Acknowledge
     }
 
     public partial class UpdateWindow : Window
@@ -22,15 +21,9 @@ namespace FlexPhone.Views
             CurrentVersion = currentVersion;
             PostponeCount = postponeCount;
             MaxPostpones = maxPostpones;
-            PostponeComboBox.SelectedIndex = 1;
-            NotesList.ItemsSource = BuildNotes(manifest);
-            LinksList.ItemsSource = manifest.Links;
             SummaryText.Text = BuildSummary(manifest, currentVersion, postponeCount, maxPostpones);
-            PostponeButton.IsEnabled = postponeCount < maxPostpones && !manifest.Critical;
-            if (!PostponeButton.IsEnabled)
-            {
-                PostponeButton.Content = "Postpone limit reached";
-            }
+            UpdateInfoText.Text = BuildUpdateInfo(manifest, currentVersion, postponeCount, maxPostpones);
+            Loaded += (_, _) => OkButton.Focus();
         }
 
         public FlexPhoneUpdateManifest Manifest { get; }
@@ -40,52 +33,10 @@ namespace FlexPhone.Views
         public UpdateWindowDecision Decision { get; private set; }
         public TimeSpan PostponeFor { get; private set; } = TimeSpan.FromHours(1);
 
-        private void UpdateNowButton_Click(object sender, RoutedEventArgs e)
+        private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            Decision = UpdateWindowDecision.Install;
+            Decision = UpdateWindowDecision.Acknowledge;
             DialogResult = true;
-        }
-
-        private void PostponeButton_Click(object sender, RoutedEventArgs e)
-        {
-            Decision = UpdateWindowDecision.Postpone;
-            PostponeFor = SelectedPostponeDuration();
-            DialogResult = true;
-        }
-
-        private void OpenLinkButton_Click(object sender, RoutedEventArgs e)
-        {
-            OpenSelectedLink();
-        }
-
-        private void LinksList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            OpenSelectedLink();
-        }
-
-        private void OpenSelectedLink()
-        {
-            if (LinksList.SelectedItem is not FlexPhoneUpdateLink link || string.IsNullOrWhiteSpace(link.Url))
-            {
-                return;
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = link.Url,
-                UseShellExecute = true
-            });
-        }
-
-        private TimeSpan SelectedPostponeDuration()
-        {
-            return (PostponeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
-            {
-                "15 minutes" => TimeSpan.FromMinutes(15),
-                "4 hours" => TimeSpan.FromHours(4),
-                "Tomorrow" => TimeSpan.FromDays(1),
-                _ => TimeSpan.FromHours(1)
-            };
         }
 
         private static List<string> BuildNotes(FlexPhoneUpdateManifest manifest)
@@ -102,6 +53,51 @@ namespace FlexPhone.Views
                 .Split(['\r', '\n', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .DefaultIfEmpty("No release notes were provided.")
                 .ToList();
+        }
+
+        private static string BuildUpdateInfo(FlexPhoneUpdateManifest manifest, string currentVersion, int postponeCount, int maxPostpones)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine(BuildSummary(manifest, currentVersion, postponeCount, maxPostpones));
+            builder.AppendLine();
+            builder.AppendLine($"Installed version: {currentVersion}");
+            builder.AppendLine($"Available version: {manifest.EffectiveVersion}");
+
+            if (!string.IsNullOrWhiteSpace(manifest.FileName))
+            {
+                builder.AppendLine($"Installer: {manifest.FileName}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(manifest.Sha256))
+            {
+                builder.AppendLine($"Checksum: {manifest.Sha256}");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("What is new:");
+            foreach (var note in BuildNotes(manifest))
+            {
+                builder.AppendLine("- " + note);
+            }
+
+            if (manifest.Links.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Links:");
+                foreach (var link in manifest.Links)
+                {
+                    var label = string.IsNullOrWhiteSpace(link.DisplayText) ? "Link" : link.DisplayText.Trim();
+                    builder.AppendLine($"- {label}: {link.Url}");
+                }
+            }
+
+            if (!manifest.Critical && postponeCount < maxPostpones)
+            {
+                builder.AppendLine();
+                builder.AppendLine("Automatic update settings control whether this update installs now or later.");
+            }
+
+            return builder.ToString();
         }
 
         private static string BuildSummary(FlexPhoneUpdateManifest manifest, string currentVersion, int postponeCount, int maxPostpones)

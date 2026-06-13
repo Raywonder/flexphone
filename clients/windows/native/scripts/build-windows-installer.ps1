@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Version = "1.0.6",
-    [string]$Build = "85",
+    [string]$Build = "86",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
