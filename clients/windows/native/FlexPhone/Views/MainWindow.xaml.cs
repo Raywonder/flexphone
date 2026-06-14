@@ -483,6 +483,15 @@ namespace FlexPhone.Views
                 catch (Exception ex)
                 {
                     Log($"Register phone failed on {route.Description}: {ex.Message}");
+                    var nextRoute = index + 1 < routes.Count ? routes[index + 1] : null;
+                    if (nextRoute is not null && IsRecoverableSipRouteFailure(ex))
+                    {
+                        Log(route.RouteType.Equals("public", StringComparison.OrdinalIgnoreCase)
+                            ? "Public SIP rejected registration; trying secure Headscale route."
+                            : $"Trying next approved SIP route {nextRoute.Description}.");
+                        continue;
+                    }
+
                     _sounds.PlayQuickAlert(_settings.PlayCallSounds);
                     MessageBox.Show(FriendlySipRegistrationError(ex), "Flex Phone - Register phone", MessageBoxButton.OK, MessageBoxImage.Warning);
                     RefreshState();
@@ -585,6 +594,16 @@ namespace FlexPhone.Views
             }
 
             return routes;
+        }
+
+        private static bool IsRecoverableSipRouteFailure(Exception ex)
+        {
+            var message = ex.Message;
+            return message.Contains("401 Unauthorized", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("403 Forbidden", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("404 Not Found", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("408 Request Timeout", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("503 Service Unavailable", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool ShouldAddDefaultHeadscaleFallbacks(string pbxServer, string sipServer, IEnumerable<SipRegistrationRoute> routes)
