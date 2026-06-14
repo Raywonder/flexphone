@@ -84,7 +84,7 @@
                         <MenuItem Header="_Resume" InputGestureText="F3"
                                   Click="ResumeButton_Click"
                                   AutomationProperties.Name="Resume"/>
-                        <MenuItem Header="_Transfer" InputGestureText="F4"
+                        <MenuItem Header="_Transfer" InputGestureText="F4, Ctrl+T"
                                   Click="TransferButton_Click"
                                   AutomationProperties.Name="Transfer"/>
                         <Separator/>

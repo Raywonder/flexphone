@@ -772,10 +772,7 @@ namespace FlexPhone.Views
 
         private async void TransferButton_Click(object sender, RoutedEventArgs e)
         {
-            if (SelectedAccount is { } account)
-            {
-                await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, TransferDestinationBox.Text), account.Softphone);
-            }
+            await ShowTransferDialogAsync();
         }
 
         private async void MuteButton_Click(object sender, RoutedEventArgs e)
@@ -1226,6 +1223,13 @@ namespace FlexPhone.Views
                 return;
             }
 
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.T)
+            {
+                e.Handled = true;
+                await ShowTransferDialogAsync();
+                return;
+            }
+
             if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.D)
             {
                 e.Handled = true;
@@ -1381,7 +1385,7 @@ namespace FlexPhone.Views
                     }
                     break;
                 case "Transfer current call":
-                    await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, TransferDestinationBox.Text.Trim()), account.Softphone);
+                    await ShowTransferDialogAsync();
                     break;
                 case "Conference open calls":
                     Log("Conference open calls is selected. Use Lines to choose each open call; server-side conferencing must be enabled by Flex PBX.");
@@ -1411,6 +1415,44 @@ namespace FlexPhone.Views
             }
 
             await Task.CompletedTask;
+        }
+
+        private async Task ShowTransferDialogAsync()
+        {
+            if (SelectedAccount is not { } account)
+            {
+                Log("Sign in before transferring a call.");
+                return;
+            }
+
+            if (account.Softphone.IsInCall != true)
+            {
+                Log("Transfer is available while you are in a call.");
+                return;
+            }
+
+            var knownServers = _accounts
+                .Select(item => item.Server)
+                .Append(TappedInPbxServer)
+                .Append(DevineCreationsPbxServer)
+                .Where(server => !string.IsNullOrWhiteSpace(server))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(server => server)
+                .ToList();
+
+            var window = new TransferCallWindow(TransferDestinationBox.Text.Trim(), account.Server, knownServers)
+            {
+                Owner = this
+            };
+
+            if (window.ShowDialog() != true || string.IsNullOrWhiteSpace(window.TransferDestination))
+            {
+                Log("Transfer canceled.");
+                return;
+            }
+
+            TransferDestinationBox.Text = window.TransferDestination;
+            await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, window.TransferDestination), account.Softphone);
         }
 
         private async Task RunFunctionKeyActionAsync(Key key)
