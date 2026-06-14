@@ -71,6 +71,30 @@ namespace FlexPhone.Views
             public string Description => $"{Label} ({Target}, {Transport.ToUpperInvariant()})";
         }
 
+        internal sealed class ExtensionDialChoice
+        {
+            public required PbxAccountSession Account { get; init; }
+            public required string Extension { get; init; }
+            public string DisplayName { get; init; } = "";
+            public string Status { get; init; } = "";
+            public string Role { get; init; } = "";
+
+            public string ServerLabel => Account.Server;
+
+            public string AccessibleSummary
+            {
+                get
+                {
+                    var name = string.IsNullOrWhiteSpace(DisplayName) ? "Unknown user" : DisplayName;
+                    var status = string.IsNullOrWhiteSpace(Status) ? "status unknown" : Status;
+                    var role = string.IsNullOrWhiteSpace(Role) ? "" : $", {Role}";
+                    return $"{name}, extension {Extension}, {ServerLabel}{role}, {status}";
+                }
+            }
+
+            public override string ToString() => AccessibleSummary;
+        }
+
         private PbxAccountSession? SelectedAccount => AccountsListBox.SelectedItem as PbxAccountSession
             ?? _accounts.FirstOrDefault();
 
@@ -991,15 +1015,88 @@ namespace FlexPhone.Views
                 return;
             }
 
+            var destination = DestinationBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(destination))
+            {
+                Log("Enter an extension or phone number before dialing.");
+                DestinationBox.Focus();
+                return;
+            }
+
+            var resolved = await ResolveDialAccountAsync(account, destination);
+            if (resolved is null)
+            {
+                Log("Dial canceled.");
+                DestinationBox.Focus();
+                return;
+            }
+
             var lineNumber = SelectedLineNumber();
-            Log($"Using line {lineNumber}.");
-            await RunActionAsync("Dial", () => account.Softphone.DialAsync(
-                account.Server,
-                account.Extension,
-                account.Password,
-                DestinationBox.Text,
+            Log($"Using {resolved.DisplayName}, line {lineNumber}.");
+            await RunActionAsync("Dial", () => resolved.Softphone.DialAsync(
+                resolved.Server,
+                resolved.Extension,
+                resolved.Password,
+                destination,
                 lineNumber),
-                account.Softphone);
+                resolved.Softphone);
+        }
+
+        private async Task<PbxAccountSession?> ResolveDialAccountAsync(PbxAccountSession defaultAccount, string destination)
+        {
+            if (!IsInternalExtension(destination) || _accounts.Count < 2)
+            {
+                return defaultAccount;
+            }
+
+            var choices = new List<ExtensionDialChoice>();
+            foreach (var account in _accounts.Where(item => !string.IsNullOrWhiteSpace(item.SessionToken)))
+            {
+                try
+                {
+                    var result = await _pbxClient.GetPresenceAsync(account.Server, account.Extension, account.SessionToken);
+                    if (!result.Success)
+                    {
+                        continue;
+                    }
+
+                    foreach (var person in result.People.Where(person => person.Extension.Equals(destination, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        choices.Add(new ExtensionDialChoice
+                        {
+                            Account = account,
+                            Extension = person.Extension,
+                            DisplayName = person.DisplayName,
+                            Status = person.Status,
+                            Role = person.Role
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"Directory lookup failed on {account.Server}: {ex.Message}");
+                }
+            }
+
+            choices = choices
+                .GroupBy(choice => $"{choice.Account.Server}|{choice.Extension}|{choice.DisplayName}", StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .OrderBy(choice => choice.ServerLabel)
+                .ThenBy(choice => choice.DisplayName)
+                .ToList();
+
+            if (choices.Count <= 1)
+            {
+                return defaultAccount;
+            }
+
+            var window = new ExtensionDialChoiceWindow(destination, choices)
+            {
+                Owner = this
+            };
+
+            var accepted = window.ShowDialog() == true;
+            return accepted ? window.SelectedChoice?.Account : null;
         }
 
         private async Task RunControlActionAsync(string label, Func<PbxAccountSession, Task> action)
@@ -2932,6 +3029,11 @@ namespace FlexPhone.Views
             var state = account.QueueState == QueueState.LoggedIn ? "logged in to" : "logged out of";
             var duration = FormatDuration(DateTime.Now - account.QueueStateChangedAt);
             return $"You are {state} the call queue. You have been {state} for {duration}.";
+        }
+
+        private static bool IsInternalExtension(string value)
+        {
+            return value.All(char.IsDigit) && value.Length is >= 3 and <= 6;
         }
 
         private static string FormatDuration(TimeSpan duration)
