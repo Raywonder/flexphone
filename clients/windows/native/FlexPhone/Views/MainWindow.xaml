@@ -291,9 +291,22 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
+                    <TextBlock Text="Number, extension, or SIP address" Margin="0,12,0,0"/>
+                    <TextBox x:Name="DestinationBox" Text="2000"
+                             TabIndex="0"
+                             AutomationProperties.Name="Number, extension, or SIP address to dial"/>
+                    <WrapPanel>
+                        <Button x:Name="DialButton" Content="Dial" Click="DialButton_Click" MinWidth="92"
+                                TabIndex="1"
+                                AutomationProperties.Name="Dial"/>
+                        <Button x:Name="HangupButton" Content="End" Click="HangupButton_Click" MinWidth="92"
+                                TabIndex="2"
+                                AutomationProperties.Name="End"/>
+                    </WrapPanel>
+
                     <TextBlock x:Name="CurrentAccountText"
                                Text="No SIP account selected"
-                               Margin="0,0,0,10"
+                               Margin="0,4,0,10"
                                TextWrapping="Wrap"
                                AutomationProperties.Name="Current SIP account"/>
                     <ComboBox x:Name="AccountsListBox"
@@ -303,23 +316,22 @@
                               IsTabStop="False"
                               AutomationProperties.Name="Account"
                               AutomationProperties.HelpText="Choose the Flex Phone account to use.">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayName}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-                    <TextBlock Text="Number, extension, or SIP address" Margin="0,12,0,0"/>
-                    <TextBox x:Name="DestinationBox" Text="2000"
-                             AutomationProperties.Name="Number, extension, or SIP address to dial"/>
                     <Button x:Name="ToggleDialPadButton" Content="Show dialpad" Click="ToggleDialPadButton_Click"
                             HorizontalAlignment="Left" MinWidth="126"
+                            TabIndex="3"
                             AutomationProperties.Name="Show dialpad"
                             AutomationProperties.HelpText="Shows or hides the dialpad. Control D also toggles the dialpad while this window is focused."/>
 
                     <TextBlock Text="Transfer to" x:Name="TransferLabel"/>
                     <TextBox x:Name="TransferDestinationBox"
+                             TabIndex="4"
                              AutomationProperties.Name="Transfer destination"/>
                 </StackPanel>
 
@@ -363,14 +375,10 @@
 
             <StackPanel Grid.Column="1">
                 <WrapPanel>
-                    <Button x:Name="DialButton" Content="Dial" Click="DialButton_Click" MinWidth="92"
-                            AutomationProperties.Name="Dial"/>
                     <Button x:Name="AnswerButton" Content="Pick up" Click="AnswerButton_Click" MinWidth="92"
                             AutomationProperties.Name="Pick up"/>
                     <Button x:Name="WaitingCallButton" Content="Waiting callers" Click="WaitingCallButton_Click" MinWidth="128"
                             AutomationProperties.Name="Currently waiting callers"/>
-                    <Button x:Name="HangupButton" Content="End" Click="HangupButton_Click" MinWidth="92"
-                            AutomationProperties.Name="End"/>
                     <Button x:Name="HoldButton" Content="Hold" Click="HoldButton_Click" MinWidth="92"
                             AutomationProperties.Name="Hold"/>
                     <Button x:Name="ResumeButton" Content="Resume" Click="ResumeButton_Click" MinWidth="92"
