@@ -34,6 +34,8 @@ namespace FlexPhone.Views
         private readonly NotifyIcon _trayIcon;
         private readonly DispatcherTimer _heartbeatTimer = new() { Interval = TimeSpan.FromSeconds(30) };
         private readonly DispatcherTimer _queueDurationTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+        private static readonly string[] DefaultHeadscaleSipFallbacks = ["100.64.0.2", "100.64.0.3"];
+        private static DateTime _lastLogCleanup = DateTime.MinValue;
         private FlexPhoneSettings _settings;
         private bool _isExiting;
         private bool _dndEnabled;
@@ -53,6 +55,21 @@ namespace FlexPhone.Views
         private const int HotKeyDecline = 0x4651;
         private const int HotKeyHold = 0x4652;
         private HwndSource? _hotKeySource;
+
+        private sealed class SipRegistrationRoute
+        {
+            public required string Label { get; init; }
+            public required string Server { get; init; }
+            public int Port { get; init; } = 5060;
+            public string Transport { get; init; } = "UDP";
+            public string RouteType { get; init; } = "";
+            public bool Preferred { get; init; }
+
+            public string Target => BuildTarget(Server, Port);
+            public bool IsHeadscale => RouteType.Equals("headscale", StringComparison.OrdinalIgnoreCase)
+                || Server.StartsWith("100.64.", StringComparison.OrdinalIgnoreCase);
+            public string Description => $"{Label} ({Target}, {Transport.ToUpperInvariant()})";
+        }
 
         private PbxAccountSession? SelectedAccount => AccountsListBox.SelectedItem as PbxAccountSession
             ?? _accounts.FirstOrDefault();
@@ -184,8 +201,7 @@ namespace FlexPhone.Views
 
                 if (!string.IsNullOrWhiteSpace(_pendingAuthorizationUrl))
                 {
-                    _pbxClient.OpenInBrowser(new Uri(_pendingAuthorizationUrl));
-                    Log("Open the authorization link, then choose Finish sign in.");
+                    Log("Confirmation email sent. Open the email link, then choose Finish sign in.");
                 }
 
                 if (CanRegisterFromProvision(result))
@@ -194,7 +210,16 @@ namespace FlexPhone.Views
                 }
                 else
                 {
-                    ShowFlexPhoneNotification("Authorize Flex Phone", "Check your email or browser to approve this device.", ToolTipIcon.Info);
+                    var message = FirstText(
+                        result.Message,
+                        "Confirmation email sent. Open the email link to authorize this device, then return to Flex Phone and choose Finish sign in.");
+                    MessageBox.Show(
+                        message + "\n\nIf this email is not assigned to an extension yet, the confirmation page will offer the extension request form.",
+                        "Flex Phone - Check your email",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                    FinishAuthorizationButton.Focus();
+                    ShowFlexPhoneNotification("Authorize Flex Phone", "Check your email to approve this device.", ToolTipIcon.Info);
                 }
             }
             catch (Exception ex)
@@ -276,10 +301,10 @@ namespace FlexPhone.Views
             }
 
             var extension = login.Extension.Trim();
-            var sipPassword = FirstText(login.SipPassword, login.Password, password);
+            var sipPassword = FirstText(login.SipPassword);
             if (string.IsNullOrWhiteSpace(sipPassword))
             {
-                MessageBox.Show("Flex PBX signed in, but did not return extension credentials for SIP registration.", "Flex Phone - Login", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Signed in, but the phone system did not return phone registration credentials. Please refresh account credentials or contact support.", "Flex Phone - Login", MessageBoxButton.OK, MessageBoxImage.Warning);
                 _sounds.PlayQuickAlert(_settings.PlayCallSounds);
                 return;
             }
@@ -293,6 +318,7 @@ namespace FlexPhone.Views
                 extension,
                 sipPassword,
                 login,
+                login.SipSettings,
                 replaceSelected,
                 rememberSignIn: RememberExistingSignInCheckBox.IsChecked == true);
         }
@@ -303,6 +329,7 @@ namespace FlexPhone.Views
             string extension,
             string password,
             FlexPhoneLoginResponse login,
+            FlexPhoneSipSettings? sipSettings,
             bool replaceSelected,
             bool rememberSignIn)
         {
@@ -381,7 +408,8 @@ namespace FlexPhone.Views
 
             _accounts.Add(account);
             AccountsListBox.SelectedItem = account;
-            var registered = await RunActionAsync("Register phone", () => softphone.RegisterAsync(sipServer, extension, password, localPort), softphone);
+            var routes = BuildSipRegistrationRoutes(sipSettings, sipServer, server);
+            var registered = await RegisterWithApprovedRoutesAsync(account, routes, extension, password, localPort);
             if (!registered || !softphone.IsRegistered)
             {
                 _accounts.Remove(account);
@@ -414,17 +442,213 @@ namespace FlexPhone.Views
             RefreshState();
         }
 
+        private async Task<bool> RegisterWithApprovedRoutesAsync(
+            PbxAccountSession account,
+            IReadOnlyList<SipRegistrationRoute> routes,
+            string extension,
+            string password,
+            int localPort)
+        {
+            if (routes.Count == 0)
+            {
+                MessageBox.Show("Flex Phone did not receive any approved SIP routes for this PBX.", "Flex Phone - Register phone", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            Exception? lastTimeout = null;
+            for (var index = 0; index < routes.Count; index++)
+            {
+                var route = routes[index];
+                account.SipServer = route.Target;
+                Log($"Trying SIP route {route.Description}.");
+                try
+                {
+                    await account.Softphone.RegisterAsync(route.Target, extension, password, localPort);
+                    Log("Register phone");
+                    return true;
+                }
+                catch (TimeoutException ex)
+                {
+                    lastTimeout = ex;
+                    Log($"SIP route timed out on {route.Description}: {ex.Message}");
+                    var nextRoute = index + 1 < routes.Count ? routes[index + 1] : null;
+                    if (nextRoute is not null)
+                    {
+                        Log(route.RouteType.Equals("public", StringComparison.OrdinalIgnoreCase)
+                            ? "Public SIP did not answer; trying secure Headscale route."
+                            : $"Trying next approved SIP route {nextRoute.Description}.");
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log($"Register phone failed on {route.Description}: {ex.Message}");
+                    _sounds.PlayQuickAlert(_settings.PlayCallSounds);
+                    MessageBox.Show(FriendlySipRegistrationError(ex), "Flex Phone - Register phone", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    RefreshState();
+                    return false;
+                }
+                finally
+                {
+                    RefreshState();
+                }
+            }
+
+            var message = lastTimeout?.Message ?? "Flex Phone could not register on any approved SIP route.";
+            Log($"Register phone failed: {message}");
+            _sounds.PlayQuickAlert(_settings.PlayCallSounds);
+            MessageBox.Show(message, "Flex Phone - Register phone", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        private static IReadOnlyList<SipRegistrationRoute> BuildSipRegistrationRoutes(
+            FlexPhoneSipSettings? sipSettings,
+            string sipServer,
+            string pbxServer)
+        {
+            var routes = new List<SipRegistrationRoute>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void Add(string label, string server, int port, string transport, string routeType, bool preferred)
+            {
+                var normalizedServer = NormalizeSipRouteHost(server);
+                if (string.IsNullOrWhiteSpace(normalizedServer))
+                {
+                    return;
+                }
+
+                var normalizedTransport = string.IsNullOrWhiteSpace(transport)
+                    ? "UDP"
+                    : transport.Trim().ToUpperInvariant();
+                var route = new SipRegistrationRoute
+                {
+                    Label = string.IsNullOrWhiteSpace(label) ? "SIP route" : label.Trim(),
+                    Server = normalizedServer,
+                    Port = port > 0 ? port : 5060,
+                    Transport = normalizedTransport,
+                    RouteType = routeType.Trim(),
+                    Preferred = preferred
+                };
+                if (seen.Add($"{route.Target}|{route.Transport}"))
+                {
+                    routes.Add(route);
+                }
+            }
+
+            if (sipSettings?.Routes is { Count: > 0 } configuredRoutes)
+            {
+                foreach (var route in configuredRoutes)
+                {
+                    Add(
+                        FirstText(route.Label ?? "", route.RouteType ?? "", "SIP route"),
+                        FirstText(route.Host, route.Server),
+                        route.Port,
+                        FirstText(route.Transport ?? "", sipSettings.Transport, "UDP"),
+                        route.RouteType ?? "",
+                        route.Preferred);
+                }
+            }
+
+            Add(
+                "Public SIP",
+                FirstText(sipSettings?.Host ?? "", sipSettings?.Server ?? "", sipServer, pbxServer),
+                sipSettings?.Port ?? 5060,
+                FirstText(sipSettings?.Transport ?? "", "UDP"),
+                "public",
+                true);
+
+            if (sipSettings?.Fallbacks is { Count: > 0 } fallbackRoutes)
+            {
+                foreach (var route in fallbackRoutes)
+                {
+                    Add(
+                        FirstText(route.Label ?? "", route.RouteType ?? "", "SIP fallback"),
+                        FirstText(route.Host, route.Server),
+                        route.Port,
+                        FirstText(route.Transport ?? "", sipSettings.Transport, "UDP"),
+                        route.RouteType ?? "",
+                        route.Preferred);
+                }
+            }
+
+            if (ShouldAddDefaultHeadscaleFallbacks(pbxServer, sipServer, routes))
+            {
+                foreach (var fallback in DefaultHeadscaleSipFallbacks)
+                {
+                    Add("Secure Headscale route", fallback, 5060, "UDP", "headscale", false);
+                }
+            }
+
+            if (routes.Count == 0)
+            {
+                Add("Configured SIP server", FirstText(sipServer, pbxServer), 5060, "UDP", "public", true);
+            }
+
+            return routes;
+        }
+
+        private static bool ShouldAddDefaultHeadscaleFallbacks(string pbxServer, string sipServer, IEnumerable<SipRegistrationRoute> routes)
+        {
+            return IsKnownFlexPbxHost(pbxServer)
+                || IsKnownFlexPbxHost(sipServer)
+                || routes.Any(route => IsKnownFlexPbxHost(route.Server));
+        }
+
+        private static bool IsKnownFlexPbxHost(string value)
+        {
+            var host = NormalizeSipRouteHost(value);
+            return host.Equals(TappedInPbxServer, StringComparison.OrdinalIgnoreCase)
+                || host.Equals(DevineCreationsPbxServer, StringComparison.OrdinalIgnoreCase)
+                || host.Equals("flexpbx.devinecreations.net", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string BuildTarget(string server, int port)
+        {
+            var host = NormalizeSipRouteHost(server);
+            if (port > 0 && port != 5060 && !host.Contains(':'))
+            {
+                return $"{host}:{port}";
+            }
+
+            return host;
+        }
+
+        private static string NormalizeSipRouteHost(string value)
+        {
+            var host = value.Trim();
+            if (host.StartsWith("sip:", StringComparison.OrdinalIgnoreCase))
+            {
+                host = host[4..];
+            }
+            else if (host.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                host = host[8..];
+            }
+            else if (host.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            {
+                host = host[7..];
+            }
+
+            var slash = host.IndexOf('/');
+            if (slash >= 0)
+            {
+                host = host[..slash];
+            }
+
+            return host.Trim();
+        }
+
         private async Task RegisterProvisionedAccountAsync(FlexPhoneProvisionResponse result, bool replaceSelected)
         {
-            var password = FirstText(result.SipPassword, result.Password);
+            var password = FirstText(result.SipPassword);
             if (string.IsNullOrWhiteSpace(result.Extension) || string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show("Flex PBX has not sent the extension credentials yet. Finish authorizing this device and try again.", "Flex Phone - Sign in", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Flex PBX has not sent phone registration credentials yet. Finish authorizing this device and try again.", "Flex Phone - Sign in", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             ExtensionBox.Text = result.Extension;
-            PasswordBox.Password = password;
+            PasswordBox.Password = "";
             EmailBox.Text = FirstText(result.Email, EmailBox.Text);
             ApplyFeatureCodes(result.FeatureCodes);
             await RegisterAccountAsync(
@@ -433,6 +657,7 @@ namespace FlexPhone.Views
                 result.Extension.Trim(),
                 password,
                 result,
+                result.SipSettings,
                 replaceSelected,
                 rememberSignIn: RememberProvisioningCheckBox.IsChecked == true);
         }
@@ -441,7 +666,7 @@ namespace FlexPhone.Views
         {
             return result.Success
                 && !string.IsNullOrWhiteSpace(result.Extension)
-                && (!string.IsNullOrWhiteSpace(result.SipPassword) || !string.IsNullOrWhiteSpace(result.Password));
+                && !string.IsNullOrWhiteSpace(result.SipPassword);
         }
 
         private async void UnregisterButton_Click(object sender, RoutedEventArgs e)
@@ -1319,6 +1544,17 @@ namespace FlexPhone.Views
 
             if (_settings.HasSeenGettingStarted)
             {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (LoginPanel.Visibility == Visibility.Visible)
+                    {
+                        ShowRequestExtensionButton.Focus();
+                    }
+                    else
+                    {
+                        DestinationBox.Focus();
+                    }
+                }), DispatcherPriority.ContextIdle);
                 return;
             }
 
@@ -1515,6 +1751,40 @@ namespace FlexPhone.Views
             while (_callLogEntries.Count > 200)
             {
                 _callLogEntries.RemoveAt(_callLogEntries.Count - 1);
+            }
+            WritePersistentLog(entry);
+        }
+
+        private static void WritePersistentLog(CallLogEntry entry)
+        {
+            try
+            {
+                var directory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "FlexPhone",
+                    "logs");
+                Directory.CreateDirectory(directory);
+                var path = Path.Combine(directory, $"flexphone-{DateTime.Now:yyyyMMdd}.log");
+                File.AppendAllText(
+                    path,
+                    $"{entry.Timestamp:O}\t{entry.Category}\t{entry.Message}{Environment.NewLine}");
+
+                if ((DateTime.Now - _lastLogCleanup).TotalHours < 12)
+                {
+                    return;
+                }
+
+                _lastLogCleanup = DateTime.Now;
+                foreach (var file in Directory.EnumerateFiles(directory, "flexphone-*.log")
+                             .Select(name => new FileInfo(name))
+                             .Where(info => info.Exists && info.CreationTimeUtc < DateTime.UtcNow.AddDays(-14)))
+                {
+                    file.Delete();
+                }
+            }
+            catch
+            {
+                // UI logging must continue even if the local diagnostics file is temporarily unavailable.
             }
         }
 
@@ -1816,6 +2086,7 @@ namespace FlexPhone.Views
                         Team = remembered.Team,
                         AutoQueueSignInOut = remembered.AutoQueuePolicy
                     },
+                    null,
                     replaceSelected: index == 0 && _accounts.Count == 0,
                     rememberSignIn: false);
             }
@@ -2029,11 +2300,37 @@ namespace FlexPhone.Views
             WindowState = WindowState.Minimized;
         }
 
+        public void RestoreForExternalActivation()
+        {
+            RestoreFromTray();
+        }
+
         private void RestoreFromTray()
         {
             Show();
             WindowState = WindowState.Normal;
             Activate();
+            Focus();
+
+            if (LoginPanel.Visibility == Visibility.Visible)
+            {
+                if (RequestExtensionPanel.Visibility == Visibility.Visible)
+                {
+                    EmailBox.Focus();
+                }
+                else if (ExistingSignInPanel.Visibility == Visibility.Visible)
+                {
+                    ExtensionBox.Focus();
+                }
+                else
+                {
+                    ShowRequestExtensionButton.Focus();
+                }
+            }
+            else
+            {
+                DestinationBox.Focus();
+            }
         }
 
         private void ShowIncomingCallWindow(PbxAccountSession account, string caller)
@@ -2828,6 +3125,16 @@ namespace FlexPhone.Views
             {
                 var target = string.IsNullOrWhiteSpace(server) ? "the selected Flex PBX server" : server.Trim();
                 return $"Flex Phone could not reach {target}. Check the PBX domain, network connection, or server route.";
+            }
+
+            return ex.Message;
+        }
+
+        private static string FriendlySipRegistrationError(Exception ex)
+        {
+            if (ex.Message.Contains("401 Unauthorized", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Phone registration was rejected by the PBX. Flex Phone signs in with your portal password, then uses phone registration credentials returned by the server. Refresh account credentials or contact support if this continues.";
             }
 
             return ex.Message;

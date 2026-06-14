@@ -197,6 +197,15 @@
                             AutomationProperties.Name="Get extension">
                     <TextBlock x:Name="CurrentAccountEmailText" TextWrapping="Wrap" Margin="0,0,0,10"
                                AutomationProperties.Name="Current linked email"/>
+                    <TextBlock Text="Before you continue"/>
+                    <TextBox x:Name="ProvisioningInstructionsBox"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="96"
+                             Text="Enter the email address for the extension you want to use. Flex PBX will send a confirmation email to that address. Open the email link to authorize this device, then return to Flex Phone and choose Finish sign in. If the email is not assigned to an extension yet, the link will guide you to request an extension account."
+                             AutomationProperties.Name="Get extension instructions"
+                             AutomationProperties.HelpText="Read-only instructions for confirming a Flex Phone extension by email."/>
                     <TextBlock Text="Email address"/>
                     <TextBox x:Name="EmailBox"
                              AutomationProperties.Name="Email address"
@@ -215,8 +224,8 @@
                              AutomationProperties.HelpText="Open this link to authorize this device with Flex PBX."/>
 
                     <WrapPanel Margin="0,6,0,0">
-                        <Button x:Name="OpenTokenUrlButton" Content="Open authorization" Click="OpenTokenUrlButton_Click"
-                                AutomationProperties.Name="Open authorization"/>
+                        <Button x:Name="OpenTokenUrlButton" Content="Open confirmation link manually" Click="OpenTokenUrlButton_Click"
+                                AutomationProperties.Name="Open confirmation link manually"/>
                         <Button x:Name="FinishAuthorizationButton" Content="Finish sign in" Click="FinishAuthorizationButton_Click"
                                 AutomationProperties.Name="Finish sign in"/>
                         <Button Content="Back" Click="ShowLoginChoiceButton_Click"
@@ -230,13 +239,13 @@
                     <TextBox x:Name="ExtensionBox"
                              AutomationProperties.Name="Extension, username, email, or provider login"/>
 
-                    <TextBlock Text="Password or provider code"/>
+                    <TextBlock Text="Portal password or provider code"/>
                     <Grid Margin="0,4,0,10">
                         <PasswordBox x:Name="PasswordBox"
-                                 AutomationProperties.Name="Password or provider code"/>
+                                     AutomationProperties.Name="Portal password or provider code"/>
                         <TextBox x:Name="VisiblePasswordBox"
                                  Visibility="Collapsed"
-                                 AutomationProperties.Name="Password or provider code shown"/>
+                                 AutomationProperties.Name="Portal password or provider code shown"/>
                     </Grid>
 
                     <CheckBox x:Name="ShowPasswordCheckBox" Content="Show password" Margin="0,0,0,10"
@@ -256,8 +265,8 @@
                                 AutomationProperties.Name="Email Flex PBX username for this extension"/>
                         <Button Content="Reset password" Click="ResetPasswordButton_Click"
                                 AutomationProperties.Name="Reset Flex PBX password for this extension"/>
-                        <Button Content="Get password" Click="GetPasswordButton_Click"
-                                AutomationProperties.Name="Request current Flex PBX password for this extension"/>
+                        <Button Content="Get portal password" Click="GetPasswordButton_Click"
+                                AutomationProperties.Name="Request current Flex PBX portal password for this extension"/>
                         <Button Content="Back" Click="ShowLoginChoiceButton_Click"
                                 AutomationProperties.Name="Back"/>
                     </WrapPanel>
