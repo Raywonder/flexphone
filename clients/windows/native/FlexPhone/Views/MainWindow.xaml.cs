@@ -1180,6 +1180,11 @@ namespace FlexPhone.Views
             if (e.Key == Key.Tab && (Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Shift))
             {
                 e.Handled = true;
+                if (IsKeyboardFocusInKeypad() && MoveFocusOutOfKeypad(backwards: Keyboard.Modifiers == ModifierKeys.Shift))
+                {
+                    return;
+                }
+
                 MoveFocusWithinActiveView(backwards: Keyboard.Modifiers == ModifierKeys.Shift);
                 return;
             }
@@ -1359,6 +1364,34 @@ namespace FlexPhone.Views
 
             FocusKeypadButton(0);
             Log("Keypad. Use arrow keys to choose a number and Enter to press it.");
+        }
+
+        private bool MoveFocusOutOfKeypad(bool backwards)
+        {
+            if (backwards)
+            {
+                if (TransferDestinationBox.Visibility == Visibility.Visible && TransferDestinationBox.Focus())
+                {
+                    return true;
+                }
+
+                if (ToggleDialPadButton.Visibility == Visibility.Visible && ToggleDialPadButton.Focus())
+                {
+                    return true;
+                }
+
+                return DestinationBox.Focus();
+            }
+
+            if (LinesList.Visibility == Visibility.Visible && LinesList.Focus())
+            {
+                return true;
+            }
+
+            return AnswerButton.Focus()
+                || WaitingCallButton.Focus()
+                || HoldButton.Focus()
+                || DestinationBox.Focus();
         }
 
         private async Task RunSpacebarInCallActionAsync()
