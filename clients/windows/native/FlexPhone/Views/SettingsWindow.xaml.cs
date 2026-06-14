@@ -61,6 +61,7 @@ namespace FlexPhone.Views
                 AnnounceCallEnded = settings.AnnounceCallEnded,
                 DetailedLineAnnouncements = settings.DetailedLineAnnouncements,
                 ShowKeyboardHints = settings.ShowKeyboardHints,
+                ShowDialPad = settings.ShowDialPad,
                 AnswerHotKey = settings.AnswerHotKey,
                 HangupHotKey = settings.HangupHotKey,
                 HoldHotKey = settings.HoldHotKey,
@@ -97,6 +98,7 @@ namespace FlexPhone.Views
             AnnounceCallEndedCheckBox.IsChecked = Settings.AnnounceCallEnded;
             DetailedLineAnnouncementsCheckBox.IsChecked = Settings.DetailedLineAnnouncements;
             ShowKeyboardHintsCheckBox.IsChecked = Settings.ShowKeyboardHints;
+            ShowDialPadCheckBox.IsChecked = Settings.ShowDialPad;
             AnswerHotKeyBox.Text = FirstText(Settings.AnswerHotKey, "Ctrl+Shift+A");
             HangupHotKeyBox.Text = FirstText(Settings.HangupHotKey, "Ctrl+Shift+H");
             HoldHotKeyBox.Text = FirstText(Settings.HoldHotKey, "Ctrl+Shift+O");
@@ -166,6 +168,7 @@ namespace FlexPhone.Views
             Settings.AnnounceCallEnded = AnnounceCallEndedCheckBox.IsChecked == true;
             Settings.DetailedLineAnnouncements = DetailedLineAnnouncementsCheckBox.IsChecked == true;
             Settings.ShowKeyboardHints = ShowKeyboardHintsCheckBox.IsChecked == true;
+            Settings.ShowDialPad = ShowDialPadCheckBox.IsChecked == true;
             Settings.AnswerHotKey = NormalizeHotKey(AnswerHotKeyBox.Text, "Ctrl+Shift+A");
             Settings.HangupHotKey = NormalizeHotKey(HangupHotKeyBox.Text, "Ctrl+Shift+H");
             Settings.HoldHotKey = NormalizeHotKey(HoldHotKeyBox.Text, "Ctrl+Shift+O");

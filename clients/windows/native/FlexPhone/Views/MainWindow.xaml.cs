@@ -34,7 +34,6 @@ namespace FlexPhone.Views
         private readonly NotifyIcon _trayIcon;
         private readonly DispatcherTimer _heartbeatTimer = new() { Interval = TimeSpan.FromSeconds(30) };
         private readonly DispatcherTimer _queueDurationTimer = new() { Interval = TimeSpan.FromMinutes(1) };
-        private static readonly string[] DefaultHeadscaleSipFallbacks = ["100.64.0.2", "100.64.0.3"];
         private static DateTime _lastLogCleanup = DateTime.MinValue;
         private FlexPhoneSettings _settings;
         private bool _isExiting;
@@ -42,6 +41,7 @@ namespace FlexPhone.Views
         private bool _refreshingLines;
         private bool _triedRememberedSignIn;
         private bool _updateInstallInProgress;
+        private bool _hadActiveCall;
         private FlexPhoneUpdateManifest? _pendingUpdateManifest;
         private CallLogWindow? _callLogWindow;
         private IncomingCallWindow? _incomingCallWindow;
@@ -580,14 +580,6 @@ namespace FlexPhone.Views
                 }
             }
 
-            if (ShouldAddDefaultHeadscaleFallbacks(pbxServer, sipServer, routes))
-            {
-                foreach (var fallback in DefaultHeadscaleSipFallbacks)
-                {
-                    Add("Secure Headscale route", fallback, 5060, "UDP", "headscale", false);
-                }
-            }
-
             if (routes.Count == 0)
             {
                 Add("Configured SIP server", FirstText(sipServer, pbxServer), 5060, "UDP", "public", true);
@@ -604,13 +596,6 @@ namespace FlexPhone.Views
                 || message.Contains("404 Not Found", StringComparison.OrdinalIgnoreCase)
                 || message.Contains("408 Request Timeout", StringComparison.OrdinalIgnoreCase)
                 || message.Contains("503 Service Unavailable", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool ShouldAddDefaultHeadscaleFallbacks(string pbxServer, string sipServer, IEnumerable<SipRegistrationRoute> routes)
-        {
-            return IsKnownFlexPbxHost(pbxServer)
-                || IsKnownFlexPbxHost(sipServer)
-                || routes.Any(route => IsKnownFlexPbxHost(route.Server));
         }
 
         private static bool IsKnownFlexPbxHost(string value)
@@ -736,7 +721,13 @@ namespace FlexPhone.Views
             {
                 await RunActionAsync("End", () => account.Softphone.HangupAsync(), account.Softphone);
                 _sounds.PlayCallEnded(_settings.PlayCallSounds);
+                ClearDialBoxAfterCall();
             }
+        }
+
+        private void ToggleDialPadButton_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleDialPad();
         }
 
         private async void HoldButton_Click(object sender, RoutedEventArgs e)
@@ -917,7 +908,7 @@ namespace FlexPhone.Views
 
         private async void PeopleButton_Click(object sender, RoutedEventArgs e)
         {
-            await RunControlActionAsync("People", async account =>
+            await RunControlActionAsync("Contacts", async account =>
             {
                 var result = await _pbxClient.GetPresenceAsync(account.Server, account.Extension, account.SessionToken);
                 var window = new PeopleWindow(account, _pbxClient, result.People)
@@ -933,10 +924,9 @@ namespace FlexPhone.Views
             await RunControlActionAsync("Directory", async account =>
             {
                 var result = await _pbxClient.GetPresenceAsync(account.Server, account.Extension, account.SessionToken);
-                var window = new PeopleWindow(account, _pbxClient, result.People)
+                var window = new PeopleWindow(account, _pbxClient, result.People, directoryMode: true)
                 {
-                    Owner = this,
-                    Title = "Directory"
+                    Owner = this
                 };
                 window.Show();
             });
@@ -1125,6 +1115,34 @@ namespace FlexPhone.Views
                 return;
             }
 
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.D)
+            {
+                e.Handled = true;
+                ToggleDialPad();
+                return;
+            }
+
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.M)
+            {
+                e.Handled = true;
+                MessagesButton_Click(MessagesButton, new RoutedEventArgs());
+                return;
+            }
+
+            if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.D)
+            {
+                e.Handled = true;
+                DndButton_Click(DndButton, new RoutedEventArgs());
+                return;
+            }
+
+            if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.Q)
+            {
+                e.Handled = true;
+                QueueToggleButton_Click(QueueToggleButton, new RoutedEventArgs());
+                return;
+            }
+
             if ((Keyboard.Modifiers == ModifierKeys.None || Keyboard.Modifiers == ModifierKeys.Shift) && TryMapKeyboardDigit(e.Key, out var digit))
             {
                 e.Handled = true;
@@ -1185,6 +1203,7 @@ namespace FlexPhone.Views
                     {
                         await HangupActiveOrFirstCallAsync(account);
                         _sounds.PlayCallEnded(_settings.PlayCallSounds);
+                        ClearDialBoxAfterCall();
                     }
                     else
                     {
@@ -1679,6 +1698,13 @@ namespace FlexPhone.Views
             var hasIncoming = account?.Softphone.HasIncomingCall == true;
             var onHold = account?.Softphone.ActiveLineState == PbxLineState.Holding;
             var muted = account?.Softphone.IsMuted == true;
+            var hasActiveCall = inCall || hasIncoming || onHold;
+
+            if (_hadActiveCall && !hasActiveCall)
+            {
+                ClearDialBoxAfterCall();
+            }
+            _hadActiveCall = hasActiveCall;
 
             LoginPanel.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
             PhonePanel.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
@@ -1721,6 +1747,7 @@ namespace FlexPhone.Views
             PeopleButton.Visibility = Visibility.Visible;
             PairButton.Visibility = Visibility.Visible;
             MessagesButton.Visibility = Visibility.Visible;
+            ApplyDialPadVisibility();
 
             RefreshLineItems(account);
         }
@@ -1864,8 +1891,39 @@ namespace FlexPhone.Views
             SelectServerPreset(ServerBox.Text);
             RememberProvisioningCheckBox.IsChecked = _settings.RememberSignIn;
             RememberExistingSignInCheckBox.IsChecked = _settings.RememberSignIn;
+            ApplyDialPadVisibility();
             UpdateAccountMenuState();
             UpdateProvisioningLink();
+        }
+
+        private void ToggleDialPad()
+        {
+            _settings.ShowDialPad = !_settings.ShowDialPad;
+            ApplyDialPadVisibility();
+            SaveSettings();
+            Log(_settings.ShowDialPad ? "Dialpad shown." : "Dialpad hidden. The number box can still dial numbers.");
+        }
+
+        private void ApplyDialPadVisibility()
+        {
+            if (!IsInitialized)
+            {
+                return;
+            }
+
+            DtmfKeypad.Visibility = _settings.ShowDialPad ? Visibility.Visible : Visibility.Collapsed;
+            ToggleDialPadButton.Content = _settings.ShowDialPad ? "Hide dialpad" : "Show dialpad";
+            AutomationProperties.SetName(ToggleDialPadButton, _settings.ShowDialPad ? "Hide dialpad" : "Show dialpad");
+            AutomationProperties.SetHelpText(ToggleDialPadButton, "Control D also shows or hides the dialpad while this window is focused. The number box remains available when the dialpad is hidden.");
+        }
+
+        private void ClearDialBoxAfterCall()
+        {
+            if (!string.IsNullOrWhiteSpace(DestinationBox.Text))
+            {
+                DestinationBox.Clear();
+                Log("Dial box cleared after call ended.", "Calls");
+            }
         }
 
         private void ServerPresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

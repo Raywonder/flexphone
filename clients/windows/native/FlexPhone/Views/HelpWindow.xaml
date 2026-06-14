@@ -44,7 +44,7 @@
                         <TextBlock Style="{StaticResource SubHeadingText}" Text="First steps"/>
                         <TextBlock Text="1. Flex Phone uses pbx.tappedin.fm by default. Change the server only from Advanced settings when joining a different Flex PBX server."/>
                         <TextBlock Text="2. Enter your email address and choose Get extension."/>
-                        <TextBlock Text="3. Open the authorization link from Flex PBX, approve this device, then choose Finish sign in."/>
+                        <TextBlock Text="3. Check your email, open the Flex PBX confirmation link, then return to Flex Phone and choose Finish sign in."/>
                         <TextBlock Text="4. Leave Remember this sign-in checked if this is your trusted Windows account and you want Flex Phone to sign in automatically next time."/>
                         <TextBlock Text="5. After sign in, enter a number, extension, or SIP address in the dial box and choose Dial. You can also press Enter to start the call."/>
                         <TextBlock Text="6. Use Queue in or Queue out if your role allows queue work. Automatic queue sign-in and sign-out can be managed by your Flex PBX administrator, team manager, group policy, or your own user setting when allowed."/>
@@ -60,7 +60,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
                     <StackPanel>
                         <TextBlock Style="{StaticResource HeadingText}" Text="Sign in and accounts"/>
-                        <TextBlock Text="The normal sign-in path asks for only the Flex PBX server and your email address. Flex PBX sends or opens an authorization link, then the app links this device to the extension that belongs to your account."/>
+                        <TextBlock Text="The normal sign-in path asks for only the Flex PBX server and your email address. Flex PBX sends a confirmation email, then the app links this device to the extension that belongs to your account after you choose Finish sign in."/>
                         <TextBlock Text="Remember this sign-in stores the extension details for this Windows user with Windows data protection, so Flex Phone can sign in automatically next time. It does not show passwords, SIP secrets, tokens, or pairing codes in the app."/>
                         <TextBlock Text="File, Forget remembered sign-in removes the saved sign-in from this Windows user. Use it before sharing this Windows account or moving the computer to another person."/>
                         <TextBlock Text="Use existing extension or another provider is for advanced setups where you already have an extension number, provider login, username and password, or a supported alternate login method."/>
@@ -119,7 +119,7 @@
                         <TextBlock Text="Automatic queue sign-in and sign-out defaults to off. Flex PBX can set it by server, role, group, team, or user where your account is allowed to manage it."/>
                         <TextBlock Text="DND turns do not disturb on or off using the Flex PBX DND toggle. When DND is on, Flex Phone will not auto-answer calls."/>
                         <TextBlock Text="Control 9 toggles call screening for the signed-in extension. Music on hold remains available from the PBX feature code or server menu when configured."/>
-                        <TextBlock Text="People opens presence information when Flex PBX provides it, including other users and agents who are available, busy, or in another status."/>
+                        <TextBlock Text="Contacts opens your saved contact list with groups, notes, and actions. Directory opens server presence information when Flex PBX provides it, including other users and agents who are available, busy, or in another status."/>
                         <TextBlock Text="Flex Phone sends non-secret device status to Flex PBX so administrators can see online devices, queue state, app version, active line, active call count, and whether the device appears to be on tailnet, local network, or public network."/>
                         <TextBlock Text="Queue status includes how long you have been logged in or logged out. This status is shown in the main window and included in device status updates so team leads and administrators can see agent availability."/>
                         <TextBlock Text="Automatic queue sign-in and sign-out can stay off for normal users, use your own user setting, follow group or team policy, or follow server policy when Flex PBX allows that role."/>
@@ -136,7 +136,7 @@
                         <TextBlock Text="Call contains Dial, Pick up, End, Hold, Resume, Transfer, Mute, Unmute, Intercom, and Call screening toggle."/>
                         <TextBlock Text="Lines contains Line 1 through Line 8. Choosing a line makes it active. If another line already has a call, Flex Phone holds or resumes lines as needed."/>
                         <TextBlock Text="Queue contains Queue in, Queue out, and Waiting calls."/>
-                        <TextBlock Text="Tools contains Voicemail, Messages, Record, Recordings, People, and Pair this phone. Pair this phone opens a normal dialog with a copyable pairing code, pairing link, examples, and a button to check that the code is still valid."/>
+                        <TextBlock Text="Tools contains Voicemail, Messages, Record, Recordings, Contacts, Directory, and Pair this phone. Pair this phone opens a normal dialog with a copyable pairing code, pairing link, examples, and a button to check that the code is still valid."/>
                         <TextBlock Text="Pairing codes link another trusted device to the same extension. Linked devices should be able to ring together by server policy, and Flex PBX can hold a caller while you transfer the call to another linked device."/>
                         <TextBlock Text="Help contains Getting started and Manual. The first time the app opens, Flex Phone shows getting started automatically."/>
                         <TextBlock Text="The tray icon can reopen Flex Phone or exit it. If minimize to tray is on, closing or minimizing the window keeps the phone available for calls and notifications."/>

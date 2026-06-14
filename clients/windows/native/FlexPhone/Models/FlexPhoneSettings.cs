@@ -29,7 +29,7 @@ namespace FlexPhone.Models
         public int DefaultLocalSipPort { get; set; } = 5066;
         public string UserStatus { get; set; } = "Available";
         public string BrowserLoginPath { get; set; } = "/flexphone/link";
-        public string PasswordResetPath { get; set; } = "/user/password/reset";
+        public string PasswordResetPath { get; set; } = "/user-portal/forgot-password.php";
         public string AccountRecoveryPath { get; set; } = "/api/flexphone-account-recovery.php";
         public string ClientDownloadPath { get; set; } = "/downloads/flexphone/";
         public string UpdateManifestPath { get; set; } = "/downloads/flexphone/flexphone-update.json";
@@ -45,6 +45,7 @@ namespace FlexPhone.Models
         public bool AnnounceCallEnded { get; set; } = true;
         public bool DetailedLineAnnouncements { get; set; } = true;
         public bool ShowKeyboardHints { get; set; } = true;
+        public bool ShowDialPad { get; set; }
         public string AnswerHotKey { get; set; } = "Ctrl+Shift+A";
         public string HangupHotKey { get; set; } = "Ctrl+Shift+H";
         public string HoldHotKey { get; set; } = "Ctrl+Shift+O";

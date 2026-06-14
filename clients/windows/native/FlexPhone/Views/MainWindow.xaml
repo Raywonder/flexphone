@@ -130,8 +130,8 @@
                                   AutomationProperties.Name="Record"/>
                         <MenuItem Header="Reco_rdings" Click="RecordingsButton_Click"
                                   AutomationProperties.Name="Recordings"/>
-                        <MenuItem Header="_People" Click="PeopleButton_Click"
-                                  AutomationProperties.Name="People"/>
+                        <MenuItem Header="_Contacts" Click="PeopleButton_Click"
+                                  AutomationProperties.Name="Contacts"/>
                         <MenuItem Header="_Directory" Click="DirectoryButton_Click"
                                   AutomationProperties.Name="Directory"/>
                         <MenuItem Header="_Pair this phone" Click="PairButton_Click"
@@ -313,6 +313,10 @@
                     <TextBlock Text="Number, extension, or SIP address" Margin="0,12,0,0"/>
                     <TextBox x:Name="DestinationBox" Text="2000"
                              AutomationProperties.Name="Number, extension, or SIP address to dial"/>
+                    <Button x:Name="ToggleDialPadButton" Content="Show dialpad" Click="ToggleDialPadButton_Click"
+                            HorizontalAlignment="Left" MinWidth="126"
+                            AutomationProperties.Name="Show dialpad"
+                            AutomationProperties.HelpText="Shows or hides the dialpad. Control D also toggles the dialpad while this window is focused."/>
 
                     <TextBlock Text="Transfer to" x:Name="TransferLabel"/>
                     <TextBox x:Name="TransferDestinationBox"
@@ -387,8 +391,8 @@
                             AutomationProperties.Name="Record"/>
                     <Button x:Name="RecordingsButton" Content="Recordings" Click="RecordingsButton_Click" MinWidth="92"
                             AutomationProperties.Name="Recordings"/>
-                    <Button x:Name="PeopleButton" Content="People" Click="PeopleButton_Click" MinWidth="92"
-                            AutomationProperties.Name="People"/>
+                    <Button x:Name="PeopleButton" Content="Contacts" Click="PeopleButton_Click" MinWidth="92"
+                            AutomationProperties.Name="Contacts"/>
                     <Button x:Name="DirectoryButton" Content="Directory" Click="DirectoryButton_Click" MinWidth="92"
                             AutomationProperties.Name="Directory"/>
                     <Button x:Name="PairButton" Content="Pair" Click="PairButton_Click" MinWidth="92"

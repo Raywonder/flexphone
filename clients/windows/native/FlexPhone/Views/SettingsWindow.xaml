@@ -164,9 +164,17 @@
                         <ListBoxItem Content="F7: Toggle queue sign-in"/>
                         <ListBoxItem Content="F8: Open voicemail"/>
                         <ListBoxItem Content="F9: Open messages"/>
-                        <ListBoxItem Content="F10: Open people"/>
+                        <ListBoxItem Content="F10: Open contacts"/>
                         <ListBoxItem Content="F11: Toggle do not disturb"/>
                         <ListBoxItem Content="F12: Toggle call screening"/>
+                    </ListBox>
+                    <TextBlock Text="Main window focused shortcuts" Margin="0,12,0,0"/>
+                    <ListBox IsTabStop="True"
+                             AutomationProperties.Name="Main window focused shortcuts">
+                        <ListBoxItem Content="Ctrl+D: Show or hide dialpad"/>
+                        <ListBoxItem Content="Ctrl+M: Open messages"/>
+                        <ListBoxItem Content="Ctrl+Shift+D: Toggle do not disturb"/>
+                        <ListBoxItem Content="Ctrl+Shift+Q: Toggle queue sign-in"/>
                     </ListBox>
                 </StackPanel>
             </TabItem>
@@ -183,6 +191,8 @@
                               AutomationProperties.Name="Use detailed line announcements"/>
                     <CheckBox x:Name="ShowKeyboardHintsCheckBox" Content="Show keyboard shortcut hints" Margin="0,8,0,0"
                               AutomationProperties.Name="Show keyboard shortcut hints"/>
+                    <CheckBox x:Name="ShowDialPadCheckBox" Content="Show dialpad by default" Margin="0,8,0,0"
+                              AutomationProperties.Name="Show dialpad by default"/>
                 </StackPanel>
             </TabItem>
 
