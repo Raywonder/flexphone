@@ -43,9 +43,24 @@ namespace FlexPhone.Services
 
     public sealed class FlexPhoneSipSettings
     {
+        public string Host { get; set; } = "";
         public string Server { get; set; } = "";
         public int Port { get; set; } = 5060;
         public string Transport { get; set; } = "UDP";
+        public List<FlexPhoneSipRoute> Routes { get; set; } = [];
+        public List<FlexPhoneSipRoute> Fallbacks { get; set; } = [];
+    }
+
+    public sealed class FlexPhoneSipRoute
+    {
+        public string Label { get; set; } = "";
+        public string Host { get; set; } = "";
+        public string Server { get; set; } = "";
+        public int Port { get; set; } = 5060;
+        public string Transport { get; set; } = "UDP";
+        [JsonPropertyName("route_type")]
+        public string RouteType { get; set; } = "";
+        public bool Preferred { get; set; }
     }
 
     public sealed class FlexPhoneProvisionResponse : FlexPhoneLoginResponse

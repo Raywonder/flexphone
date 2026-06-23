@@ -62,7 +62,7 @@ namespace FlexPhone.Models
     public sealed class PbxAccountSession
     {
         public required string Server { get; init; }
-        public string SipServer { get; init; } = "";
+        public string SipServer { get; set; } = "";
         public string Username { get; init; } = "";
         public required string Extension { get; init; }
         public required string Password { get; init; }

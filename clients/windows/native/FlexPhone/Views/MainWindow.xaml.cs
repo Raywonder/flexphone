@@ -806,7 +806,7 @@ namespace FlexPhone.Views
                     account.Server,
                     account.Extension,
                     account.Password,
-                    $"*80{destination}"),
+                    $"*82{destination}"),
                     account.Softphone);
             }
         }
@@ -980,6 +980,8 @@ namespace FlexPhone.Views
 
         private async Task PressDtmfOrAppendAsync(char digit)
         {
+            _sounds.PlayDtmfConfirmationTone(_settings.PlayCallSounds, digit, _settings.OutputAudioDevice);
+
             if (SelectedAccount?.Softphone.IsInCall == true)
             {
                 await RunActionAsync($"DTMF {digit}", () => SelectedAccount.Softphone.SendDtmfAsync(digit), SelectedAccount.Softphone);

@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Version = "1.0.6",
-    [string]$Build = "86",
+    [string]$Build = "94",
     [string]$OutputDir = "$env:USERPROFILE\Downloads\FlexPhone"
 )
 
@@ -62,8 +62,11 @@ $manifest = [ordered]@{
     download_url = "/downloads/flexphone/$installerName"
     portable_url = "/downloads/flexphone/$portableName"
     file_name = $installerName
-    release_notes = "Flex Phone $Version.$Build improves keyboard navigation, startup controls, account switching, call log filtering, ringtone playback, and SIP/audio diagnostics for call drops and missing incoming audio."
+    release_notes = "Flex Phone $Version.$Build adds local DTMF confirmation tones for keypad presses and wires Intercom dialing to the live Flex PBX *82 paging route while keeping the current screen-reader dialer improvements."
     release_notes_list = @(
+        "Each keypad digit now plays a short local DTMF confirmation tone through the selected speaker or headset.",
+        "Intercom now dials the live Flex PBX *82 extension route instead of the old conference-oriented code.",
+        "The dialpad remains keyboard-accessible with arrow-key movement and Enter activation.",
         "Tab and Shift Tab now wrap through the active Flex Phone window instead of getting trapped by the call log.",
         "The call log moved to View, Call log, with filters for calls, SIP, audio, errors, accounts, updates, and system messages.",
         "SIP account switching moved to the SIP Accounts menu instead of the main dialer controls.",

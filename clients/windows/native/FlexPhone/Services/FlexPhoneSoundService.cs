@@ -2,6 +2,7 @@ using System.IO;
 using System.Media;
 using System.Windows;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace FlexPhone.Services
 {
@@ -89,6 +90,39 @@ namespace FlexPhone.Services
             }
 
             PlayBundledSound("network-change.wav", SystemSounds.Question);
+        }
+
+        public void PlayDtmfConfirmationTone(bool enabled, char digit, string? outputDevice = null)
+        {
+            if (!enabled || !TryDtmfFrequencies(digit, out var lowFrequency, out var highFrequency))
+            {
+                return;
+            }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    using var output = new WaveOutEvent
+                    {
+                        DeviceNumber = string.IsNullOrWhiteSpace(outputDevice) ||
+                            outputDevice.Contains("Default communications speaker", StringComparison.OrdinalIgnoreCase)
+                                ? WaveMapper
+                                : DeviceNumberFor(outputDevice)
+                    };
+                    var tone = new DtmfToneSampleProvider(lowFrequency, highFrequency, TimeSpan.FromMilliseconds(95));
+                    output.Init(tone);
+                    output.Play();
+                    while (output.PlaybackState == PlaybackState.Playing)
+                    {
+                        Thread.Sleep(8);
+                    }
+                }
+                catch
+                {
+                    try { SystemSounds.Beep.Play(); } catch { }
+                }
+            });
         }
 
         private bool PlayBundledSound(string fileName, SystemSound? fallback, string? outputDevice = null, bool stopPrevious = false)
@@ -189,6 +223,75 @@ namespace FlexPhone.Services
         }
 
         private const int WaveMapper = -1;
+
+        private static bool TryDtmfFrequencies(char digit, out double lowFrequency, out double highFrequency)
+        {
+            (lowFrequency, highFrequency) = char.ToUpperInvariant(digit) switch
+            {
+                '1' => (697, 1209),
+                '2' => (697, 1336),
+                '3' => (697, 1477),
+                'A' => (697, 1633),
+                '4' => (770, 1209),
+                '5' => (770, 1336),
+                '6' => (770, 1477),
+                'B' => (770, 1633),
+                '7' => (852, 1209),
+                '8' => (852, 1336),
+                '9' => (852, 1477),
+                'C' => (852, 1633),
+                '*' => (941, 1209),
+                '0' => (941, 1336),
+                '#' => (941, 1477),
+                'D' => (941, 1633),
+                _ => (0, 0)
+            };
+            return lowFrequency > 0 && highFrequency > 0;
+        }
+
+        private sealed class DtmfToneSampleProvider : ISampleProvider
+        {
+            private readonly double _lowStep;
+            private readonly double _highStep;
+            private readonly int _totalSamples;
+            private int _sampleIndex;
+
+            public DtmfToneSampleProvider(double lowFrequency, double highFrequency, TimeSpan duration)
+            {
+                WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(44100, 1);
+                _lowStep = 2 * Math.PI * lowFrequency / WaveFormat.SampleRate;
+                _highStep = 2 * Math.PI * highFrequency / WaveFormat.SampleRate;
+                _totalSamples = (int)(WaveFormat.SampleRate * duration.TotalSeconds);
+            }
+
+            public WaveFormat WaveFormat { get; }
+
+            public int Read(float[] buffer, int offset, int count)
+            {
+                var available = Math.Max(0, _totalSamples - _sampleIndex);
+                var samples = Math.Min(count, available);
+                for (var i = 0; i < samples; i++)
+                {
+                    var envelope = Envelope(_sampleIndex, _totalSamples);
+                    buffer[offset + i] = (float)(((Math.Sin(_lowStep * _sampleIndex) + Math.Sin(_highStep * _sampleIndex)) * 0.14) * envelope);
+                    _sampleIndex++;
+                }
+
+                return samples;
+            }
+
+            private static double Envelope(int sampleIndex, int totalSamples)
+            {
+                const int rampSamples = 220;
+                if (sampleIndex < rampSamples)
+                {
+                    return sampleIndex / (double)rampSamples;
+                }
+
+                var remaining = totalSamples - sampleIndex;
+                return remaining < rampSamples ? Math.Max(0, remaining / (double)rampSamples) : 1;
+            }
+        }
 
         private static string CachedSoundPath(string fileName)
         {
