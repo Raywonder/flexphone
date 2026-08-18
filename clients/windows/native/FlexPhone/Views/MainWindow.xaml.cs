@@ -804,7 +804,7 @@ namespace FlexPhone.Views
             if (SelectedAccount is { } account)
             {
                 var route = account.Softphone.ToggleAudioRoute();
-                var message = $"Audio route set to {route}. It will be used when the next media session is connected.";
+                var message = $"Audio route set to {route}. Active calls switch immediately when the selected device is available.";
                 Log(message);
                 AutomationProperties.SetName(ToggleAudioRouteButton, $"Switch audio route. Current route {route}");
                 RefreshState();
