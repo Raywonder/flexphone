@@ -3205,6 +3205,8 @@ namespace FlexPhone.Views
                     group = account.Group,
                     team = account.Team,
                     device_id = account.DeviceId,
+                    client_type = "FlexPhone",
+                    capabilities = new[] { "wideband_audio", "opus", "g722", "headset_routing" },
                     paired = account.IsPaired,
                     linked_device_ring_policy = "all_linked_devices",
                     linked_device_transfer_behavior = "hold_caller_until_answered",

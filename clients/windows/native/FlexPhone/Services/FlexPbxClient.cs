@@ -472,6 +472,24 @@ namespace FlexPhone.Services
             return PostControlAsync(server, token, status);
         }
 
+        public Task<FlexPhoneActionResponse> GetMyDevicesAsync(string server, string extension, string token)
+        {
+            return PostControlAsync(server, token, new
+            {
+                action = "list_my_devices",
+                extension
+            });
+        }
+
+        public Task<FlexPhoneActionResponse> GetAudioCapabilitiesAsync(string server, string extension, string token)
+        {
+            return PostControlAsync(server, token, new
+            {
+                action = "audio_capabilities",
+                extension
+            });
+        }
+
         public async Task<FlexPhoneUpdateManifest?> GetUpdateManifestAsync(string server, string manifestPath)
         {
             var candidates = new List<Uri>();
