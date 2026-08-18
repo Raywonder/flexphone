@@ -4,6 +4,7 @@ using SIPSorcery.Media;
 using SIPSorcery.Net;
 using SIPSorcery.SIP;
 using SIPSorcery.SIP.App;
+using SIPSorceryMedia.Abstractions;
 using SIPSorceryMedia.Windows;
 using FlexPhone.Models;
 
@@ -17,6 +18,7 @@ namespace FlexPhone.Services
             public SIPUserAgent? UserAgent { get; set; }
             public SIPServerUserAgent? PendingIncomingCall { get; set; }
             public VoIPMediaSession? MediaSession { get; set; }
+            public SwitchableAudioSink? AudioSink { get; set; }
             public AudioExtrasSource? MuteAudioSource { get; set; }
             public bool IsMuted { get; set; }
 
@@ -90,7 +92,14 @@ namespace FlexPhone.Services
         {
             _useHeadsetAudio = !_useHeadsetAudio;
             var route = _useHeadsetAudio ? AudioDeviceLabel(_headsetAudioDevice) : AudioDeviceLabel(_outputAudioDevice);
-            Diagnostic?.Invoke(this, $"Audio route changed to {route}. It will be used for the next connected media session.");
+            foreach (var line in _lines)
+            {
+                if (line.UserAgent?.IsCallActive == true && line.AudioSink != null)
+                {
+                    line.AudioSink.SwitchTo(_useHeadsetAudio);
+                }
+            }
+            Diagnostic?.Invoke(this, $"Audio route changed to {route}. Active calls were switched when available.");
             return route;
         }
 
@@ -261,7 +270,7 @@ namespace FlexPhone.Services
 
             line.UserAgent = CreateUserAgent(lineNumber);
             line.UserAgent.OnIncomingCall += OnIncomingCall;
-            line.MediaSession = CreateMediaSession();
+            line.MediaSession = CreateMediaSession(line);
             Diagnostic?.Invoke(this, $"Dialing line {lineNumber} to {dst} using audio endpoint.");
             var result = await line.UserAgent.Call($"sip:{dst}", extension, password, line.MediaSession);
 
@@ -283,7 +292,7 @@ namespace FlexPhone.Services
             }
 
             await SelectLineAsync(line.Snapshot.LineNumber);
-            line.MediaSession = CreateMediaSession();
+            line.MediaSession = CreateMediaSession(line);
             Diagnostic?.Invoke(this, $"Answering line {line.Snapshot.LineNumber} using audio endpoint.");
             var result = await line.UserAgent!.Answer(line.PendingIncomingCall, line.MediaSession);
             line.PendingIncomingCall = null;
@@ -438,19 +447,131 @@ namespace FlexPhone.Services
             return userAgent;
         }
 
-        private VoIPMediaSession CreateMediaSession()
+        private VoIPMediaSession CreateMediaSession(LineRuntime line)
         {
             var selectedOutput = _useHeadsetAudio ? _headsetAudioDevice : _outputAudioDevice;
             var outputIndex = WindowsAudioDeviceService.RenderDeviceIndex(selectedOutput);
+            var primaryOutputIndex = WindowsAudioDeviceService.RenderDeviceIndex(_outputAudioDevice);
             var inputIndex = WindowsAudioDeviceService.CaptureDeviceIndex(_inputAudioDevice);
-            var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), outputIndex, inputIndex);
+            var encoder = CreateHighQualityAudioEncoder();
+            var audioEndPoint = new WindowsAudioEndPoint(encoder, primaryOutputIndex, inputIndex);
+            var headsetEndPoint = new WindowsAudioEndPoint(encoder, WindowsAudioDeviceService.RenderDeviceIndex(_headsetAudioDevice), -1, disableSource: true);
+            var audioSink = new SwitchableAudioSink(audioEndPoint, headsetEndPoint, _useHeadsetAudio);
+            line.AudioSink = audioSink;
             Diagnostic?.Invoke(this, $"Created Windows audio endpoint for microphone '{AudioDeviceLabel(_inputAudioDevice)}' and speaker '{AudioDeviceLabel(selectedOutput)}'.");
-            return new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
+            var mediaSession = new VoIPMediaSession(new MediaEndPoints
+            {
+                AudioSource = audioEndPoint,
+                AudioSink = audioSink
+            });
+            mediaSession.OnAudioFormatsNegotiated += formats =>
+            {
+                var selected = formats.FirstOrDefault();
+                Diagnostic?.Invoke(this, $"Negotiated audio codec: {selected.Codec} {selected.ClockRate}Hz, offered formats: {string.Join(", ", formats.Select(format => format.Codec))}.");
+            };
+            return mediaSession;
+        }
+
+        private static AudioEncoder CreateHighQualityAudioEncoder()
+        {
+            using var defaults = new AudioEncoder(includeOpus: true);
+            var ordered = defaults.SupportedFormats
+                .OrderBy(format => format.Codec switch
+                {
+                    AudioCodecsEnum.OPUS => 0,
+                    AudioCodecsEnum.G722 => 1,
+                    AudioCodecsEnum.PCMU => 2,
+                    AudioCodecsEnum.PCMA => 3,
+                    _ => 9
+                })
+                .ToArray();
+            return new AudioEncoder(ordered);
         }
 
         private static string AudioDeviceLabel(string? deviceName)
         {
             return string.IsNullOrWhiteSpace(deviceName) ? "default" : deviceName.Trim();
+        }
+
+        private sealed class SwitchableAudioSink : IAudioSink
+        {
+            private readonly IAudioSink _primary;
+            private readonly IAudioSink _headset;
+            private readonly object _sync = new();
+            private IAudioSink _current;
+            private bool _headsetSelected;
+            private bool _started;
+
+            public SwitchableAudioSink(IAudioSink primary, IAudioSink headset, bool headsetSelected)
+            {
+                _primary = primary;
+                _headset = headset;
+                _headsetSelected = headsetSelected;
+                _current = headsetSelected ? headset : primary;
+                _primary.OnAudioSinkError += ForwardSinkError;
+                _headset.OnAudioSinkError += ForwardSinkError;
+            }
+
+            public event SourceErrorDelegate? OnAudioSinkError;
+
+            public void SwitchTo(bool headsetSelected)
+            {
+                lock (_sync)
+                {
+                    if (_headsetSelected == headsetSelected)
+                    {
+                        return;
+                    }
+
+                    var previous = _current;
+                    _headsetSelected = headsetSelected;
+                    _current = headsetSelected ? _headset : _primary;
+                    if (_started)
+                    {
+                        previous.PauseAudioSink().GetAwaiter().GetResult();
+                        _current.StartAudioSink().GetAwaiter().GetResult();
+                    }
+                }
+            }
+
+            public List<AudioFormat> GetAudioSinkFormats() => _current.GetAudioSinkFormats();
+
+            public void SetAudioSinkFormat(AudioFormat audioFormat)
+            {
+                _primary.SetAudioSinkFormat(audioFormat);
+                _headset.SetAudioSinkFormat(audioFormat);
+            }
+
+            public void GotAudioRtp(System.Net.IPEndPoint remoteEndPoint, uint ssrc, uint seqnum, uint timestamp, int payloadID, bool marker, byte[] payload)
+                => _current.GotAudioRtp(remoteEndPoint, ssrc, seqnum, timestamp, payloadID, marker, payload);
+
+            public void GotEncodedMediaFrame(EncodedAudioFrame encodedMediaFrame)
+                => _current.GotEncodedMediaFrame(encodedMediaFrame);
+
+            public void RestrictFormats(Func<AudioFormat, bool> filter)
+            {
+                _primary.RestrictFormats(filter);
+                _headset.RestrictFormats(filter);
+            }
+
+            public Task PauseAudioSink() => _current.PauseAudioSink();
+
+            public Task ResumeAudioSink() => _current.ResumeAudioSink();
+
+            public async Task StartAudioSink()
+            {
+                _started = true;
+                await _current.StartAudioSink();
+            }
+
+            public async Task CloseAudioSink()
+            {
+                _started = false;
+                await _primary.CloseAudioSink();
+                await _headset.CloseAudioSink();
+            }
+
+            private void ForwardSinkError(string errorMessage) => OnAudioSinkError?.Invoke(errorMessage);
         }
 
         private void OnIncomingCall(SIPUserAgent userAgent, SIPRequest request)
