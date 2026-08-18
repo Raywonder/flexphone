@@ -46,6 +46,15 @@
                      AutomationProperties.Name="Transfer destination"
                      AutomationProperties.HelpText="Enter the extension, phone number, or user part to transfer this call to."/>
 
+            <TextBlock x:Name="DeviceLabel" Text="Signed-in device" Visibility="Collapsed"/>
+            <ComboBox x:Name="DeviceBox"
+                      MinHeight="32"
+                      Margin="0,4,0,12"
+                      Visibility="Collapsed"
+                      IsEditable="False"
+                      AutomationProperties.Name="Signed-in FlexPhone device"
+                      AutomationProperties.HelpText="Choose one of your online FlexPhone devices."/>
+
             <TextBlock x:Name="ServerLabel" Text="PBX system" Visibility="Collapsed"/>
             <ComboBox x:Name="ServerBox"
                       MinHeight="32"

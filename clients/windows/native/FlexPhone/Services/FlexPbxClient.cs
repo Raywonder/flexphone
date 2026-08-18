@@ -89,6 +89,26 @@ namespace FlexPhone.Services
         public List<FlexPhoneVoicemailInfo> Voicemails { get; set; } = [];
         public List<FlexPhoneMessageInfo> Messages { get; set; } = [];
         public List<FlexPhoneQueueInfo> Queues { get; set; } = [];
+        public List<FlexPhoneDeviceInfo> Devices { get; set; } = [];
+    }
+
+    public sealed class FlexPhoneDeviceInfo
+    {
+        [JsonPropertyName("device_id")]
+        public string DeviceId { get; set; } = "";
+        [JsonPropertyName("device_name")]
+        public string DeviceName { get; set; } = "";
+        public string Extension { get; set; } = "";
+        public bool Online { get; set; }
+        [JsonPropertyName("flexphone_capable")]
+        public bool FlexPhoneCapable { get; set; }
+        [JsonPropertyName("can_receive_named_transfer")]
+        public bool CanReceiveNamedTransfer { get; set; }
+
+        [JsonIgnore]
+        public string AccessibleSummary => $"{(string.IsNullOrWhiteSpace(DeviceName) ? "Unnamed device" : DeviceName)}, {(Online ? "online" : "offline")}";
+
+        public override string ToString() => AccessibleSummary;
     }
 
     public sealed class FlexPhoneCallInfo
@@ -487,6 +507,20 @@ namespace FlexPhone.Services
             {
                 action = "audio_capabilities",
                 extension
+            });
+        }
+
+        public Task<FlexPhoneActionResponse> TransferToDeviceAsync(
+            string server,
+            string extension,
+            string token,
+            string deviceId)
+        {
+            return PostControlAsync(server, token, new
+            {
+                action = "transfer_to_device",
+                extension,
+                device_id = deviceId.Trim()
             });
         }
 

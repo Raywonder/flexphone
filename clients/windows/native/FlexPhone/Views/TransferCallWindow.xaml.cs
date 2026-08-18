@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using FlexPhone.Services;
 
 namespace FlexPhone.Views
 {
@@ -8,7 +9,7 @@ namespace FlexPhone.Views
     {
         private readonly string _currentServer;
 
-        internal TransferCallWindow(string initialDestination, string currentServer, IEnumerable<string> knownServers)
+        internal TransferCallWindow(string initialDestination, string currentServer, IEnumerable<string> knownServers, IEnumerable<FlexPhoneDeviceInfo> devices)
         {
             InitializeComponent();
             _currentServer = currentServer;
@@ -19,6 +20,14 @@ namespace FlexPhone.Views
             }
 
             ServerBox.Text = currentServer;
+            foreach (var device in devices.Where(device => device.CanReceiveNamedTransfer))
+            {
+                DeviceBox.Items.Add(device);
+            }
+            if (DeviceBox.Items.Count > 0)
+            {
+                TransferTypeBox.Items.Add(new ComboBoxItem { Content = "Another signed-in FlexPhone device", Tag = "device" });
+            }
             Loaded += (_, _) =>
             {
                 DestinationBox.Focus();
@@ -31,6 +40,7 @@ namespace FlexPhone.Views
         }
 
         internal string TransferDestination { get; private set; } = "";
+        internal string TransferDeviceId { get; private set; } = "";
 
         private string TransferMode => (TransferTypeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "internal";
 
@@ -48,14 +58,26 @@ namespace FlexPhone.Views
             {
                 "external" => "Phone number",
                 "pbx" => "Extension, number, or SIP user",
+                "device" => "Signed-in device",
                 _ => "Extension"
             };
+            DeviceLabel.Visibility = mode == "device" ? Visibility.Visible : Visibility.Collapsed;
+            DeviceBox.Visibility = mode == "device" ? Visibility.Visible : Visibility.Collapsed;
+            DestinationBox.Visibility = mode == "device" ? Visibility.Collapsed : Visibility.Visible;
             UpdatePreview();
         }
 
         private void UpdatePreview()
         {
             var destination = BuildDestination();
+            if (TransferMode == "device")
+            {
+                var device = DeviceBox.SelectedItem as FlexPhoneDeviceInfo;
+                PreviewText.Text = device is null
+                    ? "Choose an online signed-in FlexPhone device."
+                    : $"Transfer target: {device.AccessibleSummary}";
+                return;
+            }
             PreviewText.Text = string.IsNullOrWhiteSpace(destination)
                 ? "Enter a transfer destination."
                 : $"Transfer target: {destination}";
@@ -91,6 +113,20 @@ namespace FlexPhone.Views
         private void TransferButton_Click(object sender, RoutedEventArgs e)
         {
             var destination = BuildDestination();
+            if (TransferMode == "device")
+            {
+                if (DeviceBox.SelectedItem is not FlexPhoneDeviceInfo device)
+                {
+                    PreviewText.Text = "Choose an online signed-in FlexPhone device before continuing.";
+                    DeviceBox.Focus();
+                    return;
+                }
+
+                TransferDeviceId = device.DeviceId;
+                DialogResult = true;
+                Close();
+                return;
+            }
             if (string.IsNullOrWhiteSpace(destination))
             {
                 PreviewText.Text = "Enter a transfer destination before continuing.";

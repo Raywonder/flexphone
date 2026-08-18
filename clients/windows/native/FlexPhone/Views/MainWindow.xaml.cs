@@ -1511,18 +1511,43 @@ namespace FlexPhone.Views
                 .OrderBy(server => server)
                 .ToList();
 
-            var window = new TransferCallWindow(TransferDestinationBox.Text.Trim(), account.Server, knownServers)
+            FlexPhoneActionResponse? deviceResponse = null;
+            try
+            {
+                deviceResponse = await _pbxClient.GetMyDevicesAsync(account.Server, account.Extension, account.SessionToken);
+            }
+            catch (Exception ex)
+            {
+                Log($"Could not load signed-in FlexPhone devices: {ex.Message}");
+            }
+
+            var window = new TransferCallWindow(
+                TransferDestinationBox.Text.Trim(),
+                account.Server,
+                knownServers,
+                deviceResponse?.Devices ?? [])
             {
                 Owner = this
             };
 
-            if (window.ShowDialog() != true || string.IsNullOrWhiteSpace(window.TransferDestination))
+            if (window.ShowDialog() != true
+                || (string.IsNullOrWhiteSpace(window.TransferDestination) && string.IsNullOrWhiteSpace(window.TransferDeviceId)))
             {
                 Log("Transfer canceled.");
                 return;
             }
 
             TransferDestinationBox.Text = window.TransferDestination;
+            if (!string.IsNullOrWhiteSpace(window.TransferDeviceId))
+            {
+                var response = await _pbxClient.TransferToDeviceAsync(
+                    account.Server,
+                    account.Extension,
+                    account.SessionToken,
+                    window.TransferDeviceId);
+                Log(response.Success ? response.Message : $"Device transfer failed: {response.Error}");
+                return;
+            }
             await RunActionAsync("Transfer", () => account.Softphone.TransferAsync(account.Server, window.TransferDestination), account.Softphone);
         }
 
