@@ -19,6 +19,7 @@ namespace FlexPhone.Views
             Settings = new FlexPhoneSettings
             {
                 DefaultPbxServer = settings.DefaultPbxServer,
+                ConfiguredServers = settings.ConfiguredServers.ToList(),
                 DefaultTurnServer = settings.DefaultTurnServer,
                 UseCustomTurnServer = settings.UseCustomTurnServer,
                 CustomTurnServer = settings.CustomTurnServer,
@@ -34,6 +35,10 @@ namespace FlexPhone.Views
                 SpacebarInCallAction = settings.SpacebarInCallAction,
                 InputAudioDevice = settings.InputAudioDevice,
                 OutputAudioDevice = settings.OutputAudioDevice,
+                HeadsetAudioDevice = settings.HeadsetAudioDevice,
+                FollowHeadsetForSounds = settings.FollowHeadsetForSounds,
+                SoundVolume = settings.SoundVolume,
+                IncomingCallWaitingTone = settings.IncomingCallWaitingTone,
                 ClientDisplayName = settings.ClientDisplayName,
                 AutoQueueSignInOutMode = settings.AutoQueueSignInOutMode,
                 AllowIntercom = settings.AllowIntercom,
@@ -77,15 +82,20 @@ namespace FlexPhone.Views
             AutoAnswerCheckBox.IsChecked = Settings.AutoAnswer;
             DisplayNameBox.Text = string.IsNullOrWhiteSpace(Settings.ClientDisplayName) ? currentDisplayName : Settings.ClientDisplayName;
             LoadAudioDeviceChoices();
-            SelectComboText(InputAudioDeviceComboBox, Settings.InputAudioDevice);
-            SelectComboText(OutputAudioDeviceComboBox, Settings.OutputAudioDevice);
+            SelectListText(InputAudioDeviceComboBox, Settings.InputAudioDevice, "Default communications microphone");
+            SelectListText(OutputAudioDeviceComboBox, Settings.OutputAudioDevice, "Default communications speaker");
+            SelectListText(HeadsetAudioDeviceListBox, Settings.HeadsetAudioDevice, "Default headset");
+            FollowHeadsetForSoundsCheckBox.IsChecked = Settings.FollowHeadsetForSounds;
+            SoundVolumeSlider.Value = Math.Clamp(Settings.SoundVolume, 0, 100);
+            UpdateSoundVolumeText();
             SelectEnterAction(Settings.EnterDefaultAction);
             SelectSpacebarAction(Settings.SpacebarInCallAction);
             SelectAutoQueueMode(Settings.AutoQueueSignInOutMode);
             IntercomCheckBox.IsChecked = Settings.AllowIntercom;
             PlaySoundsCheckBox.IsChecked = Settings.PlayCallSounds;
             LoadRingtoneChoices();
-            SelectComboText(IncomingRingtoneComboBox, Settings.IncomingRingtone);
+            SelectListText(IncomingRingtoneComboBox, Settings.IncomingRingtone, "Incoming call");
+            _previewRingtones = true;
             MinimizeToTrayCheckBox.IsChecked = Settings.MinimizeToTray;
             StartMinimizedCheckBox.IsChecked = Settings.StartMinimizedToTray;
             StartWithWindowsCheckBox.IsChecked = Settings.StartWithWindows || WindowsStartupService.IsEnabled();
@@ -113,6 +123,14 @@ namespace FlexPhone.Views
             CallScreeningToggleCodeBox.Text = Settings.CallScreeningToggleCode;
             SelectStatus(Settings.UserStatus);
             UpdateProvisioningLink();
+            foreach (var server in Settings.ConfiguredServers.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                ProviderServerListBox.Items.Add(server);
+            }
+            if (ProviderServerListBox.Items.Count == 0)
+            {
+                ProviderServerListBox.Items.Add(Settings.DefaultPbxServer);
+            }
         }
 
         public FlexPhoneSettings Settings { get; private set; }
@@ -126,6 +144,11 @@ namespace FlexPhone.Views
             }
 
             Settings.DefaultPbxServer = DefaultServerBox.Text.Trim();
+            Settings.ConfiguredServers = ProviderServerListBox.Items.OfType<string>()
+                .Select(value => value.Trim())
+                .Where(value => value.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
             Settings.ProviderType = (ProviderTypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Flex PBX";
             Settings.DefaultLocalSipPort = port;
             Settings.RememberSignIn = RememberSignInCheckBox.IsChecked == true;
@@ -135,12 +158,15 @@ namespace FlexPhone.Views
             Settings.ClientDisplayName = DisplayNameBox.Text.Trim();
             Settings.EnterDefaultAction = (EnterActionComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? EnterActionComboBox.Text.Trim();
             Settings.SpacebarInCallAction = (SpacebarActionComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Mute or unmute microphone";
-            Settings.InputAudioDevice = FirstText(InputAudioDeviceComboBox.Text, "Default communications microphone");
-            Settings.OutputAudioDevice = FirstText(OutputAudioDeviceComboBox.Text, "Default communications speaker");
+            Settings.InputAudioDevice = SelectedText(InputAudioDeviceComboBox, "Default communications microphone");
+            Settings.OutputAudioDevice = SelectedText(OutputAudioDeviceComboBox, "Default communications speaker");
+            Settings.HeadsetAudioDevice = SelectedText(HeadsetAudioDeviceListBox, "Default headset");
+            Settings.FollowHeadsetForSounds = FollowHeadsetForSoundsCheckBox.IsChecked == true;
+            Settings.SoundVolume = (int)Math.Round(SoundVolumeSlider.Value);
             Settings.AutoQueueSignInOutMode = (AutoQueueModeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Off";
             Settings.AllowIntercom = IntercomCheckBox.IsChecked == true;
             Settings.PlayCallSounds = PlaySoundsCheckBox.IsChecked == true;
-            Settings.IncomingRingtone = FirstText(IncomingRingtoneComboBox.Text, "Incoming call");
+            Settings.IncomingRingtone = SelectedText(IncomingRingtoneComboBox, "Incoming call");
             Settings.MinimizeToTray = MinimizeToTrayCheckBox.IsChecked == true;
             Settings.StartMinimizedToTray = StartMinimizedCheckBox.IsChecked == true;
             Settings.StartWithWindows = StartWithWindowsCheckBox.IsChecked == true;
@@ -293,6 +319,7 @@ namespace FlexPhone.Views
         {
             InputAudioDeviceComboBox.Items.Clear();
             OutputAudioDeviceComboBox.Items.Clear();
+            HeadsetAudioDeviceListBox.Items.Clear();
             foreach (var device in WindowsAudioDeviceService.CaptureDevices())
             {
                 InputAudioDeviceComboBox.Items.Add(device);
@@ -300,6 +327,10 @@ namespace FlexPhone.Views
             foreach (var device in WindowsAudioDeviceService.RenderDevices())
             {
                 OutputAudioDeviceComboBox.Items.Add(device);
+            }
+            foreach (var device in WindowsAudioDeviceService.HeadsetDevices())
+            {
+                HeadsetAudioDeviceListBox.Items.Add(device);
             }
         }
 
@@ -312,32 +343,70 @@ namespace FlexPhone.Views
             }
         }
 
-        private void IncomingRingtoneComboBox_DropDownOpened(object sender, EventArgs e)
-        {
-            _previewRingtones = true;
-        }
-
         private void IncomingRingtoneComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_previewRingtones && IncomingRingtoneComboBox.SelectedItem?.ToString() is { Length: > 0 } ringtone)
             {
-                _sounds.PreviewRingtone(ringtone, OutputAudioDeviceComboBox.Text);
+                _sounds.PreviewRingtone(ringtone, SelectedText(OutputAudioDeviceComboBox, "Default communications speaker"), Settings.SoundVolume);
             }
         }
 
-        private static void SelectComboText(System.Windows.Controls.ComboBox comboBox, string value)
+        private void SoundVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var target = FirstText(value, comboBox.Items.OfType<object>().FirstOrDefault()?.ToString() ?? "");
-            foreach (var item in comboBox.Items)
+            UpdateSoundVolumeText();
+        }
+
+        private void UpdateSoundVolumeText()
+        {
+            if (SoundVolumeValueText is not null && SoundVolumeSlider is not null)
+            {
+                SoundVolumeValueText.Text = $"{Math.Round(SoundVolumeSlider.Value)} percent";
+            }
+        }
+
+        private static void SelectListText(System.Windows.Controls.ListBox listBox, string value, string fallback)
+        {
+            var target = FirstText(value, fallback);
+            foreach (var item in listBox.Items)
             {
                 if (string.Equals(item.ToString(), target, StringComparison.OrdinalIgnoreCase))
                 {
-                    comboBox.SelectedItem = item;
+                    listBox.SelectedItem = item;
                     return;
                 }
             }
+            if (listBox.Items.Count > 0)
+            {
+                listBox.SelectedIndex = 0;
+            }
+        }
 
-            comboBox.Text = target;
+        private static string SelectedText(System.Windows.Controls.ListBox listBox, string fallback)
+        {
+            return FirstText(listBox.SelectedItem?.ToString(), fallback);
+        }
+
+        private void AddProviderButton_Click(object sender, RoutedEventArgs e)
+        {
+            var server = DefaultServerBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(server))
+            {
+                MessageBox.Show("Enter a server or provider domain first.", "Flex Phone Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            if (!ProviderServerListBox.Items.Contains(server))
+            {
+                ProviderServerListBox.Items.Add(server);
+            }
+            ProviderServerListBox.SelectedItem = server;
+        }
+
+        private void RemoveProviderButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ProviderServerListBox.SelectedItem is string server && ProviderServerListBox.Items.Count > 1)
+            {
+                ProviderServerListBox.Items.Remove(server);
+            }
         }
 
         private static string FirstText(params string[] values)

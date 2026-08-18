@@ -82,9 +82,9 @@
                         <TextBlock Style="{StaticResource SubHeadingText}" Text="Waiting calls"/>
                         <TextBlock Text="Waiting shows calls that may be available for pickup. Pick up answers a ringing or waiting call when Flex PBX offers it to your extension."/>
                         <TextBlock Style="{StaticResource SubHeadingText}" Text="Messages"/>
-                        <TextBlock Text="Messages opens SMS and provider messages for your extension when Flex PBX and the number provider support it. Sending and receiving use Flex PBX, so provider details such as Callcentric stay on the server."/>
-                        <TextBlock Text="The Messages window has a message history, To field, Message field, Refresh, Send, and Close. Refresh asks Flex PBX for the latest messages. Send asks Flex PBX to send through the configured number provider for your extension."/>
-                        <TextBlock Text="If SMS is not enabled for the number or provider, Flex PBX will report that messages are not available instead of trying to send locally from the Windows app."/>
+                        <TextBlock Text="Messages opens internal Flex PBX extension messages. Outside SMS and provider texting are not enabled in this window yet."/>
+                        <TextBlock Text="The Messages window has a message history, To extension field, Message field, Refresh, Send, and Close. Refresh asks Flex PBX for the latest internal extension messages. Send asks Flex PBX to deliver the message to another extension."/>
+                        <TextBlock Text="If you need outside SMS later, that must be wired through Flex PBX and the number provider before Flex Phone can send real phone-number text messages."/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -179,7 +179,7 @@
                         <TextBlock Text="If sign in fails, check the server name, your email address, and the authorization link. Use the existing-extension section only when you already have login details or another provider login."/>
                         <TextBlock Text="If calls do not connect, check that Flex PBX is reachable, your extension is registered, and your network allows SIP and media traffic. If you are behind a strict network, ask your administrator whether TURN or tailnet access is required."/>
                         <TextBlock Text="If Windows asks for network permission after an older update, install the newest Flex Phone build so the installer can refresh the trusted-network firewall rule. If Windows asks for administrator permission during install or update, choose Yes so the firewall and Program Files updates can be applied."/>
-                        <TextBlock Text="If messages fail, the extension or number may not have SMS enabled, the provider may not support messaging for that number, or Flex PBX may need the provider route checked."/>
+                        <TextBlock Text="If messages fail, check that the recipient is a valid Flex PBX extension. Outside SMS is not available from this window yet."/>
                         <TextBlock Text="If screen reader output is too detailed or too quiet, open Settings, then Accessibility, and adjust announcements and shortcut hints."/>
                         <TextBlock Text="If an update fails or is canceled, the current installed Flex Phone stays in place. Try checking for updates again after confirming the server and internet connection are working."/>
                     </StackPanel>

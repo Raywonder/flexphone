@@ -3,6 +3,7 @@ namespace FlexPhone.Models
     public sealed class FlexPhoneSettings
     {
         public string DefaultPbxServer { get; set; } = "pbx.tappedin.fm";
+        public List<string> ConfiguredServers { get; set; } = new() { "pbx.tappedin.fm" };
         public string DefaultTurnServer { get; set; } = "turn.tappedin.fm";
         public bool UseCustomTurnServer { get; set; }
         public string CustomTurnServer { get; set; } = "";
@@ -18,6 +19,10 @@ namespace FlexPhone.Models
         public string SpacebarInCallAction { get; set; } = "Mute or unmute microphone";
         public string InputAudioDevice { get; set; } = "Default communications microphone";
         public string OutputAudioDevice { get; set; } = "Default communications speaker";
+        public string HeadsetAudioDevice { get; set; } = "Default headset";
+        public bool FollowHeadsetForSounds { get; set; } = true;
+        public int SoundVolume { get; set; } = 100;
+        public string IncomingCallWaitingTone { get; set; } = "Call waiting beeps";
         public string ClientDisplayName { get; set; } = "";
         public string AutoQueueSignInOutMode { get; set; } = "Off";
         public bool AllowIntercom { get; set; } = true;

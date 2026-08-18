@@ -39,11 +39,11 @@
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <Menu x:Name="MainMenu" Background="Transparent" Foreground="#f7f7f7"
                       IsMainMenu="True"
-                      Focusable="False"
+                      Focusable="True"
                       IsTabStop="False"
-                      KeyboardNavigation.TabNavigation="None"
-                      KeyboardNavigation.ControlTabNavigation="None"
-                      KeyboardNavigation.DirectionalNavigation="None"
+                      KeyboardNavigation.TabNavigation="Local"
+                      KeyboardNavigation.ControlTabNavigation="Local"
+                      KeyboardNavigation.DirectionalNavigation="Cycle"
                       AutomationProperties.Name="Flex Phone menu">
                     <MenuItem Header="_File" AutomationProperties.Name="File">
                         <MenuItem Header="_Account" AutomationProperties.Name="Account">
@@ -389,6 +389,9 @@
                             AutomationProperties.Name="Mute"/>
                     <Button x:Name="UnmuteButton" Content="Unmute" Click="UnmuteButton_Click" MinWidth="92"
                             AutomationProperties.Name="Unmute"/>
+                    <Button x:Name="ToggleAudioRouteButton" Content="Use headset" Click="ToggleAudioRouteButton_Click" MinWidth="112"
+                            AutomationProperties.Name="Toggle audio route"
+                            AutomationProperties.HelpText="Button. Status: switch call audio between the selected speaker and headset."/>
                     <Button x:Name="IntercomButton" Content="Intercom" Click="IntercomButton_Click" MinWidth="92"
                             AutomationProperties.Name="Intercom"/>
                     <Button x:Name="VoicemailButton" Content="Voicemail" Click="VoicemailButton_Click" MinWidth="92"

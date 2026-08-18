@@ -88,6 +88,7 @@ namespace FlexPhone.Services
         public List<FlexPhoneRecordingInfo> Recordings { get; set; } = [];
         public List<FlexPhoneVoicemailInfo> Voicemails { get; set; } = [];
         public List<FlexPhoneMessageInfo> Messages { get; set; } = [];
+        public List<FlexPhoneQueueInfo> Queues { get; set; } = [];
     }
 
     public sealed class FlexPhoneCallInfo
@@ -98,6 +99,19 @@ namespace FlexPhone.Services
         [JsonPropertyName("last4")]
         public string Last4 { get; set; } = "";
         public string State { get; set; } = "";
+        public string Queue { get; set; } = "";
+        public string Wait { get; set; } = "";
+    }
+
+    public sealed class FlexPhoneQueueInfo
+    {
+        public string Name { get; set; } = "";
+        [JsonPropertyName("calls_waiting")]
+        public int CallsWaiting { get; set; }
+        [JsonPropertyName("members_total")]
+        public int MembersTotal { get; set; }
+        [JsonPropertyName("members_available")]
+        public int MembersAvailable { get; set; }
     }
 
     public sealed class FlexPhonePresenceInfo

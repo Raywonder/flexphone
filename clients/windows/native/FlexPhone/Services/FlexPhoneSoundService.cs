@@ -17,13 +17,14 @@ namespace FlexPhone.Services
             ["Incoming call"] = "Ringtones/ringtone-incoming-call.wav",
             ["Incoming call alternate"] = "Ringtones/ringtone-incoming-call-alt.wav",
             ["Ring Ring Flitch"] = "Ringtones/ringtone-ring-ring-flitch.wav",
-            ["Are you gonna answer"] = "Ringtones/ringtone-are-you-gonna-answer.wav"
+            ["Are you gonna answer"] = "Ringtones/ringtone-are-you-gonna-answer.wav",
+            ["Call waiting beeps"] = "quick-alert.wav"
         };
 
         public static IReadOnlyList<string> AvailableRingtones { get; } =
             RingtoneFiles.Keys.OrderBy(name => name).ToArray();
 
-        public void PlayIncomingRing(bool enabled, string? ringtone = null, string? outputDevice = null)
+        public void PlayIncomingRing(bool enabled, string? ringtone = null, string? outputDevice = null, int volume = 100)
         {
             if (!enabled)
             {
@@ -32,24 +33,34 @@ namespace FlexPhone.Services
 
             if (!string.IsNullOrWhiteSpace(ringtone) &&
                 RingtoneFiles.TryGetValue(ringtone.Trim(), out var selectedFile) &&
-                PlayBundledSound(selectedFile, null, outputDevice))
+                PlayBundledSound(selectedFile, null, outputDevice, volume: volume))
             {
                 return;
             }
 
-            PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk, outputDevice);
+            PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk, outputDevice, volume: volume);
         }
 
-        public void PreviewRingtone(string? ringtone, string? outputDevice = null)
+        public void PreviewRingtone(string? ringtone, string? outputDevice = null, int volume = 100)
         {
             if (!string.IsNullOrWhiteSpace(ringtone) &&
                 RingtoneFiles.TryGetValue(ringtone.Trim(), out var selectedFile) &&
-                PlayBundledSound(selectedFile, null, outputDevice, stopPrevious: true))
+                PlayBundledSound(selectedFile, null, outputDevice, stopPrevious: true, volume: volume))
             {
                 return;
             }
 
-            PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk, outputDevice, stopPrevious: true);
+            PlayBundledSound("incoming-ring.wav", SystemSounds.Asterisk, outputDevice, stopPrevious: true, volume: volume);
+        }
+
+        public void PlayCallWaitingTone(bool enabled, string? outputDevice = null, int volume = 100)
+        {
+            if (!enabled)
+            {
+                return;
+            }
+
+            PlayBundledSound("quick-alert.wav", SystemSounds.Beep, outputDevice, volume: volume);
         }
 
         public void PlayCallConnected(bool enabled)
@@ -125,14 +136,14 @@ namespace FlexPhone.Services
             });
         }
 
-        private bool PlayBundledSound(string fileName, SystemSound? fallback, string? outputDevice = null, bool stopPrevious = false)
+        private bool PlayBundledSound(string fileName, SystemSound? fallback, string? outputDevice = null, bool stopPrevious = false, int volume = 100)
         {
             try
             {
                 var cachedPath = CachedSoundPath(fileName);
                 if (!string.IsNullOrWhiteSpace(cachedPath))
                 {
-                    if (TryPlayWithNAudio(cachedPath, outputDevice, stopPrevious))
+                    if (TryPlayWithNAudio(cachedPath, outputDevice, stopPrevious, volume))
                     {
                         return true;
                     }
@@ -152,7 +163,7 @@ namespace FlexPhone.Services
             return false;
         }
 
-        private bool TryPlayWithNAudio(string path, string? outputDevice, bool stopPrevious)
+        private bool TryPlayWithNAudio(string path, string? outputDevice, bool stopPrevious, int volume)
         {
             lock (_previewSync)
             {
@@ -169,6 +180,7 @@ namespace FlexPhone.Services
                 }
 
                 var reader = new AudioFileReader(path);
+                reader.Volume = Math.Clamp(volume, 0, 100) / 100f;
                 var output = new WaveOutEvent { DeviceNumber = deviceNumber };
                 output.Init(reader);
                 output.PlaybackStopped += (_, _) =>

@@ -15,6 +15,11 @@ namespace FlexPhone.Services
             return Devices(DataFlow.Render, "Default communications speaker");
         }
 
+        public static IReadOnlyList<string> HeadsetDevices()
+        {
+            return Devices(DataFlow.Render, "Default headset");
+        }
+
         public static int CaptureDeviceIndex(string? deviceName)
         {
             if (IsDefaultChoice(deviceName))
@@ -40,19 +45,44 @@ namespace FlexPhone.Services
             var names = new List<string> { defaultName };
             try
             {
-                using var enumerator = new MMDeviceEnumerator();
-                foreach (var device in enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active))
+                // Use the same WaveIn/WaveOut names that the media endpoint uses.
+                // MMDevice friendly names and NAudio Wave names are not guaranteed
+                // to be identical, which previously made a selected device fall
+                // back to the default endpoint.
+                if (flow == DataFlow.Capture)
                 {
-                    var name = device.FriendlyName?.Trim();
-                    if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    for (var index = 0; index < WaveInEvent.DeviceCount; index++)
                     {
-                        names.Add(name);
+                        try
+                        {
+                            var name = WaveInEvent.GetCapabilities(index).ProductName?.Trim();
+                            if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                            {
+                                names.Add(name);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                else
+                {
+                    for (var index = 0; index < WaveOut.DeviceCount; index++)
+                    {
+                        try
+                        {
+                            var name = WaveOut.GetCapabilities(index).ProductName?.Trim();
+                            if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                            {
+                                names.Add(name);
+                            }
+                        }
+                        catch { }
                     }
                 }
             }
             catch
             {
-                // Keep the default device choice available on systems where endpoint enumeration is blocked.
+                // Keep the default device choice available on systems where enumeration is blocked.
             }
 
             return names;

@@ -366,7 +366,7 @@ namespace FlexPhone.Views
                 _accounts.Remove(selected);
             }
 
-            var softphone = new PbxSoftphoneService(_settings.InputAudioDevice, _settings.OutputAudioDevice);
+            var softphone = new PbxSoftphoneService(_settings.InputAudioDevice, _settings.OutputAudioDevice, _settings.HeadsetAudioDevice);
             var displayName = FirstText(_settings.ClientDisplayName, login.FullName);
             var account = new PbxAccountSession
             {
@@ -417,7 +417,8 @@ namespace FlexPhone.Views
             softphone.IncomingCall += async (_, caller) => await Dispatcher.InvokeAsync(async () =>
             {
                 Log($"Incoming call for {account.DisplayName} from {caller}");
-                _sounds.PlayIncomingRing(_settings.PlayCallSounds, _settings.IncomingRingtone, _settings.OutputAudioDevice);
+                var alertDevice = _settings.FollowHeadsetForSounds ? _settings.HeadsetAudioDevice : _settings.OutputAudioDevice;
+                _sounds.PlayIncomingRing(_settings.PlayCallSounds, _settings.IncomingRingtone, alertDevice, _settings.SoundVolume);
                 ShowFlexPhoneNotification("Incoming call", $"Call from {caller}", ToolTipIcon.Info);
                 if (_settings.AutoAnswer && !_dndEnabled)
                 {
@@ -428,6 +429,13 @@ namespace FlexPhone.Views
                 {
                     ShowIncomingCallWindow(account, caller);
                 }
+            });
+            softphone.CallWaiting += (_, caller) => Dispatcher.Invoke(() =>
+            {
+                var alertDevice = _settings.FollowHeadsetForSounds ? _settings.HeadsetAudioDevice : _settings.OutputAudioDevice;
+                _sounds.PlayCallWaitingTone(_settings.PlayCallSounds, alertDevice, _settings.SoundVolume);
+                Log($"Incoming call waiting. {caller}. Current call remains active.");
+                ShowFlexPhoneNotification("Incoming call waiting", $"{caller}. Press Pick up if you want to switch.", ToolTipIcon.Info);
             });
 
             _accounts.Add(account);
@@ -791,6 +799,18 @@ namespace FlexPhone.Views
             }
         }
 
+        private void ToggleAudioRouteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedAccount is { } account)
+            {
+                var route = account.Softphone.ToggleAudioRoute();
+                var message = $"Audio route set to {route}. It will be used when the next media session is connected.";
+                Log(message);
+                AutomationProperties.SetName(ToggleAudioRouteButton, $"Switch audio route. Current route {route}");
+                RefreshState();
+            }
+        }
+
         private async void IntercomButton_Click(object sender, RoutedEventArgs e)
         {
             if (SelectedAccount is { } account)
@@ -871,10 +891,26 @@ namespace FlexPhone.Views
             await RunControlActionAsync("Waiting calls", async account =>
             {
                 var result = await _pbxClient.GetWaitingCallsAsync(account.Server, account.Extension, account.SessionToken);
-                var message = result.Calls.Count == 0
+                var queueSummary = result.Queues.Count == 0
+                    ? ""
+                    : string.Join(Environment.NewLine, result.Queues.Select(queue =>
+                        $"{QueueDisplayName(queue.Name)}: {queue.CallsWaiting} waiting, {queue.MembersAvailable} of {queue.MembersTotal} agents available."));
+                var waitingSummary = result.Calls.Count == 0
                     ? "No calls are waiting right now."
                     : string.Join(Environment.NewLine, result.Calls.Select(call =>
-                        $"{FirstText(call.DisplayName, "Caller")} {FirstText(call.Last4, call.Number)} {call.State}".Trim()));
+                    {
+                        var caller = FirstText(call.DisplayName, call.Last4, call.Number, "Caller");
+                        var number = FirstText(call.Last4, call.Number);
+                        var queue = QueueDisplayName(call.Queue);
+                        var wait = string.IsNullOrWhiteSpace(call.Wait) ? "" : $", waiting {call.Wait}";
+                        var numberText = string.IsNullOrWhiteSpace(number) || caller.Contains(number, StringComparison.OrdinalIgnoreCase)
+                            ? ""
+                            : $" {number}";
+                        return $"{queue}: {caller}{numberText}, {call.State}{wait}".Trim();
+                    }));
+                var message = string.IsNullOrWhiteSpace(queueSummary)
+                    ? waitingSummary
+                    : $"{waitingSummary}{Environment.NewLine}{Environment.NewLine}Queue status:{Environment.NewLine}{queueSummary}";
                 MessageBox.Show(message, "Flex Phone - Waiting", MessageBoxButton.OK, MessageBoxImage.Information);
             });
         }
@@ -1897,6 +1933,8 @@ namespace FlexPhone.Views
             TransferButton.Visibility = inCall ? Visibility.Visible : Visibility.Collapsed;
             MuteButton.Visibility = inCall && !muted ? Visibility.Visible : Visibility.Collapsed;
             UnmuteButton.Visibility = inCall && muted ? Visibility.Visible : Visibility.Collapsed;
+            ToggleAudioRouteButton.Visibility = inCall || hasIncoming || onHold ? Visibility.Visible : Visibility.Collapsed;
+            ToggleAudioRouteButton.Content = account?.Softphone.IsUsingHeadsetAudio == true ? "Use speaker" : "Use headset";
             TransferLabel.Visibility = inCall ? Visibility.Visible : Visibility.Collapsed;
             TransferDestinationBox.Visibility = inCall ? Visibility.Visible : Visibility.Collapsed;
             IntercomButton.Visibility = !inCall && !hasIncoming && _settings.AllowIntercom ? Visibility.Visible : Visibility.Collapsed;
@@ -3103,9 +3141,11 @@ namespace FlexPhone.Views
 
         private static string QueueStatusText(PbxAccountSession account)
         {
-            var state = account.QueueState == QueueState.LoggedIn ? "logged in to" : "logged out of";
+            var state = account.QueueState == QueueState.LoggedIn ? "signed in to" : "signed out of";
             var duration = FormatDuration(DateTime.Now - account.QueueStateChangedAt);
-            return $"You are {state} the call queue. You have been {state} for {duration}.";
+            return account.QueueState == QueueState.LoggedIn
+                ? $"Queue status: signed in. You have been available for queue calls for {duration}."
+                : $"Queue status: signed out. You have been unavailable for queue calls for {duration}.";
         }
 
         private static bool IsInternalExtension(string value)
@@ -3441,6 +3481,19 @@ namespace FlexPhone.Views
         private static string FirstText(params string[] values)
         {
             return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? "";
+        }
+
+        private static string QueueDisplayName(string queue)
+        {
+            return queue switch
+            {
+                "shared-devine-tappedin-ring" => "Shared Devine and TappedIn queue",
+                "shared-operator-ring" => "Shared operator queue",
+                "tappedin-ring" => "TappedIn queue",
+                "support" => "Support queue",
+                _ when string.IsNullOrWhiteSpace(queue) => "Queue",
+                _ => queue.Replace('-', ' ')
+            };
         }
     }
 }

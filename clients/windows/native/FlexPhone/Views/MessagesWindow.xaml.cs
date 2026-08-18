@@ -33,7 +33,7 @@ namespace FlexPhone.Views
             var body = BodyBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(to) || string.IsNullOrWhiteSpace(body))
             {
-                MessageBox.Show("Enter a number and message before sending.", "Flex Phone - Messages", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Enter an extension and message before sending.", "Flex Phone - Messages", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 

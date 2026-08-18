@@ -39,12 +39,15 @@ namespace FlexPhone.Services
         private bool _disposed;
         private readonly string? _inputAudioDevice;
         private readonly string? _outputAudioDevice;
+        private readonly string? _headsetAudioDevice;
+        private bool _useHeadsetAudio;
         private static readonly TimeSpan RegistrationWaitTimeout = TimeSpan.FromSeconds(18);
 
-        public PbxSoftphoneService(string? inputAudioDevice = null, string? outputAudioDevice = null)
+        public PbxSoftphoneService(string? inputAudioDevice = null, string? outputAudioDevice = null, string? headsetAudioDevice = null)
         {
             _inputAudioDevice = inputAudioDevice;
             _outputAudioDevice = outputAudioDevice;
+            _headsetAudioDevice = headsetAudioDevice;
             for (var i = 1; i <= 8; i++)
             {
                 _lines.Add(new LineRuntime(i));
@@ -75,10 +78,21 @@ namespace FlexPhone.Services
 
         public event EventHandler? StateChanged;
         public event EventHandler<string>? IncomingCall;
+        public event EventHandler<string>? CallWaiting;
         public event EventHandler<string>? RegistrationSucceeded;
         public event EventHandler<string>? LineFreed;
         public event EventHandler<string>? ActiveLineChanged;
         public event EventHandler<string>? Diagnostic;
+
+        public bool IsUsingHeadsetAudio => _useHeadsetAudio;
+
+        public string ToggleAudioRoute()
+        {
+            _useHeadsetAudio = !_useHeadsetAudio;
+            var route = _useHeadsetAudio ? AudioDeviceLabel(_headsetAudioDevice) : AudioDeviceLabel(_outputAudioDevice);
+            Diagnostic?.Invoke(this, $"Audio route changed to {route}. It will be used for the next connected media session.");
+            return route;
+        }
 
         public Task StartAsync(int localPort = 5066)
         {
@@ -426,10 +440,11 @@ namespace FlexPhone.Services
 
         private VoIPMediaSession CreateMediaSession()
         {
-            var outputIndex = WindowsAudioDeviceService.RenderDeviceIndex(_outputAudioDevice);
+            var selectedOutput = _useHeadsetAudio ? _headsetAudioDevice : _outputAudioDevice;
+            var outputIndex = WindowsAudioDeviceService.RenderDeviceIndex(selectedOutput);
             var inputIndex = WindowsAudioDeviceService.CaptureDeviceIndex(_inputAudioDevice);
             var audioEndPoint = new WindowsAudioEndPoint(new AudioEncoder(), outputIndex, inputIndex);
-            Diagnostic?.Invoke(this, $"Created Windows audio endpoint for microphone '{AudioDeviceLabel(_inputAudioDevice)}' and speaker '{AudioDeviceLabel(_outputAudioDevice)}'.");
+            Diagnostic?.Invoke(this, $"Created Windows audio endpoint for microphone '{AudioDeviceLabel(_inputAudioDevice)}' and speaker '{AudioDeviceLabel(selectedOutput)}'.");
             return new VoIPMediaSession(audioEndPoint.ToMediaEndPoints());
         }
 
@@ -440,15 +455,32 @@ namespace FlexPhone.Services
 
         private void OnIncomingCall(SIPUserAgent userAgent, SIPRequest request)
         {
+            if (HasIncomingCall)
+            {
+                Diagnostic?.Invoke(this, "Ignored a duplicate incoming SIP offer because another incoming call is already waiting.");
+                return;
+            }
             var lineNumber = FirstIdleLine();
             var line = _lines[lineNumber - 1];
-            _activeLine = lineNumber;
+            var wasAlreadyInCall = IsInCall;
+            if (!wasAlreadyInCall)
+            {
+                _activeLine = lineNumber;
+            }
             line.UserAgent = userAgent;
             line.PendingIncomingCall = userAgent.AcceptCall(request);
             var remote = request.Header.From?.FromURI?.User ?? request.Header.From?.FromName ?? "Unknown caller";
             Diagnostic?.Invoke(this, $"Incoming SIP call on line {lineNumber} from {remote}.");
             SetLine(lineNumber, PbxLineState.Ringing, remote, $"Incoming call from {remote}");
-            IncomingCall?.Invoke(this, $"Line {lineNumber} from {remote}");
+            var caller = $"Line {lineNumber} from {remote}";
+            if (wasAlreadyInCall)
+            {
+                CallWaiting?.Invoke(this, caller);
+            }
+            else
+            {
+                IncomingCall?.Invoke(this, caller);
+            }
         }
 
         private int FirstIdleLine()

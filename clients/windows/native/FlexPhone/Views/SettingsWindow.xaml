@@ -15,10 +15,6 @@
         <TabControl Grid.Row="0">
             <TabItem Header="General">
                 <StackPanel Margin="12">
-                    <TextBlock Text="Server or provider domain"/>
-                    <TextBox x:Name="DefaultServerBox" Margin="0,4,0,10"
-                             AutomationProperties.Name="Server or provider domain"
-                             AutomationProperties.HelpText="Use this only when joining a different Flex PBX server. The normal default is pbx.tappedin.fm; DevineCreations clients can use pbx.devinecreations.net."/>
                     <CheckBox x:Name="CheckUpdatesCheckBox" Content="Check for updates" Margin="0,8,0,0"
                               AutomationProperties.Name="Check for updates"/>
                     <CheckBox x:Name="AutoInstallUpdatesCheckBox" Content="Automatically install updates" Margin="0,8,0,0"
@@ -118,21 +114,37 @@
             <TabItem Header="Audio">
                 <StackPanel Margin="12">
                     <TextBlock Text="Microphone"/>
-                    <ComboBox x:Name="InputAudioDeviceComboBox" IsEditable="True" Margin="0,4,0,10"
+                    <ListBox x:Name="InputAudioDeviceComboBox" Height="92" Margin="0,4,0,10"
                               AutomationProperties.Name="Microphone"
-                              AutomationProperties.HelpText="Choose the microphone Flex Phone should prefer for calls. Leave default to follow Windows communications device settings."/>
+                              AutomationProperties.HelpText="List box. Status: choose the microphone Flex Phone should use for calls."
+                              KeyboardNavigation.DirectionalNavigation="Cycle"/>
                     <TextBlock Text="Speaker or headset"/>
-                    <ComboBox x:Name="OutputAudioDeviceComboBox" IsEditable="True" Margin="0,4,0,10"
+                    <ListBox x:Name="OutputAudioDeviceComboBox" Height="92" Margin="0,4,0,10"
                               AutomationProperties.Name="Speaker or headset"
-                              AutomationProperties.HelpText="Choose the playback device Flex Phone should prefer for calls. Leave default to follow Windows communications device settings."/>
+                              AutomationProperties.HelpText="List box. Status: choose the speaker Flex Phone should use for calls."
+                              KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    <TextBlock Text="Headset device" Margin="0,8,0,0"/>
+                    <ListBox x:Name="HeadsetAudioDeviceListBox" Height="72" Margin="0,4,0,10"
+                             AutomationProperties.Name="Headset device"
+                             AutomationProperties.HelpText="List box. Status: choose the headset used by the headset route toggle."
+                             KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    <CheckBox x:Name="FollowHeadsetForSoundsCheckBox" Content="Follow the selected headset for call sounds"
+                              AutomationProperties.Name="Follow the selected headset for call sounds"
+                              AutomationProperties.HelpText="Check box. Status: call alerts follow the selected headset route when checked."/>
                     <CheckBox x:Name="PlaySoundsCheckBox" Content="Play Flex Phone call sounds" Margin="0,8,0,0"
                               AutomationProperties.Name="Play Flex Phone call sounds"/>
+                    <TextBlock Text="Sound volume" Margin="0,12,0,0"/>
+                    <Slider x:Name="SoundVolumeSlider" Minimum="0" Maximum="100" TickFrequency="10" IsSnapToTickEnabled="True"
+                            Margin="0,4,0,2" ValueChanged="SoundVolumeSlider_ValueChanged"
+                            AutomationProperties.Name="Sound volume"
+                            AutomationProperties.HelpText="Slider. Status: use Left and Right Arrow to change volume."/>
+                    <TextBlock x:Name="SoundVolumeValueText" Text="100 percent" HorizontalAlignment="Right"/>
                     <TextBlock Text="Incoming ringtone" Margin="0,14,0,0"/>
-                    <ComboBox x:Name="IncomingRingtoneComboBox" Margin="0,4,0,10"
+                    <ListBox x:Name="IncomingRingtoneComboBox" Height="110" Margin="0,4,0,10"
                               SelectionChanged="IncomingRingtoneComboBox_SelectionChanged"
-                              DropDownOpened="IncomingRingtoneComboBox_DropDownOpened"
                               AutomationProperties.Name="Incoming ringtone"
-                              AutomationProperties.HelpText="Use Up and Down Arrow to choose a ringtone. Flex Phone previews the focused selection."/>
+                              AutomationProperties.HelpText="List box. Status: focus a ringtone to preview it."
+                              KeyboardNavigation.DirectionalNavigation="Cycle"/>
                     <TextBlock Text="If a selected device is unavailable, Flex Phone falls back to the Windows default communications device." TextWrapping="Wrap"/>
                 </StackPanel>
             </TabItem>
@@ -198,6 +210,18 @@
 
             <TabItem Header="Advanced">
                 <StackPanel Margin="12">
+                    <TextBlock Text="Server and provider accounts" FontWeight="SemiBold"/>
+                    <TextBlock Text="Hosted server choices are normally supplied by the server. Add a provider only when your account is permitted to use another service." TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <TextBox x:Name="DefaultServerBox" Margin="0,4,0,4"
+                             AutomationProperties.Name="Server or provider domain"
+                             AutomationProperties.HelpText="Text box. Status: advanced server or provider domain."/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Add" Click="AddProviderButton_Click" AutomationProperties.Name="Add server or provider"/>
+                        <Button Content="Remove" Click="RemoveProviderButton_Click" AutomationProperties.Name="Remove server or provider"/>
+                    </StackPanel>
+                    <ListBox x:Name="ProviderServerListBox" Height="78" Margin="0,4,0,10"
+                             AutomationProperties.Name="Configured server and provider accounts"
+                             AutomationProperties.HelpText="List box. Status: configured server and provider accounts."/>
                     <Button x:Name="AdvancedPathsButton" Content="Advanced server paths" Click="AdvancedPathsButton_Click"
                             HorizontalAlignment="Left" Margin="0,0,0,8"
                             AutomationProperties.Name="Advanced server paths"/>
