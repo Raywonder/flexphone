@@ -39,7 +39,7 @@
                                "The Help menu now includes Check for updates now and Check for updates automatically.",
                                "Updater metadata points to the current installer and portable build."
                            ],
-    "checksum":  "a8625b2e612537e8e508cd2f6c653e36ef1590cce3835cf3b0ff30835c15adfd",
-    "checksum_sha256":  "a8625b2e612537e8e508cd2f6c653e36ef1590cce3835cf3b0ff30835c15adfd",
-    "portable_checksum_sha256":  "9934a71de50195f60efa526718e0eb5b0fb37a4a7dc552035893b5d2e0e17534"
+    "checksum":  "3e1969fe0bf9aac6c568f88f40054b4db69366b762f64848dd829e62a9a5db12",
+    "checksum_sha256":  "3e1969fe0bf9aac6c568f88f40054b4db69366b762f64848dd829e62a9a5db12",
+    "portable_checksum_sha256":  "34bf6b67c160931f7ec5ccd7d8cf7113c86962b0ca851e10cfe02dff1561e0f6"
 }
